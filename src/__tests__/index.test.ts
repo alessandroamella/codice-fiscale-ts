@@ -1,17 +1,27 @@
-import { equal } from "node:assert/strict";
-import { describe, it } from "node:test";
+import { equal } from 'node:assert/strict';
+import { describe, it } from 'node:test';
 
-import { foobar } from "../index.ts";
+import { FiscalCodeCalculator } from '../index.ts';
 
-await describe("foobar()", async () => {
-	await describe("given two positive integers", async () => {
-		const first = 1;
-		const second = 2;
+await describe('FiscalCodeCalculator', async () => {
+    await describe("given a person's information", async () => {
+        const calculator = new FiscalCodeCalculator();
+        const italianPerson = {
+            firstName: 'Mario',
+            lastName: 'Rossi',
+            birthDate: new Date(1980, 0, 1), // January 1, 1980
+            gender: 'M' as const,
+            birthPlace: 'ROMA',
+            birthProvince: 'RM'
+        };
 
-		await describe("when called", async () => {
-			await it("returns the sum of them multiplied by 3 + extra", () => {
-				equal(foobar(first, second), 12);
-			});
-		});
-	});
+        await describe('when calculating fiscal code', async () => {
+            await it('returns the correct fiscal code', async () => {
+                const fiscalCode =
+                    await calculator.calculateFiscalCode(italianPerson);
+                equal(typeof fiscalCode, 'string');
+                equal(fiscalCode.length, 16);
+            });
+        });
+    });
 });

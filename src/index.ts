@@ -1,7 +1,12 @@
-import { bar } from "./bar.ts";
-import { foo } from "./foo.ts";
-import { baz } from "./nested/baz.ts";
+export { FiscalCodeCalculator } from './codiceFiscale.ts';
 
-export function foobar(a: number, b: number) {
-	return foo().repeat(a).length + bar().repeat(b).length + baz().length;
-}
+export type {
+    BaseMunicipality,
+    BilingualMunicipality,
+    FiscalCodeData,
+    ForeignPerson,
+    ItalianMunicipality,
+    ItalianPerson,
+    Municipality,
+    Person
+} from './types.ts';
