@@ -25,8 +25,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: package.json
-          cache: 'npm'
-      - run: npm ci
+      - uses: pnpm/action-setup@v3
+        with:
+          version: latest
+          run_install: false
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - run: pnpm install --frozen-lockfile
 
   lint:
     name: 🔬 Lint
@@ -37,10 +51,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: package.json
-          cache: 'npm'
-      - run: npm ci
+      - uses: pnpm/action-setup@v3
+        with:
+          version: latest
+          run_install: false
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - run: pnpm install --frozen-lockfile
       - name: 🔬 Lint
-        run: npm run lint
+        run: pnpm run lint
 
   type-check:
     name: ʦ Typecheck
@@ -51,10 +79,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: package.json
-          cache: 'npm'
-      - run: npm ci
+      - uses: pnpm/action-setup@v3
+        with:
+          version: latest
+          run_install: false
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - run: pnpm install --frozen-lockfile
       - name: ʦ Typecheck
-        run: npm run type:check
+        run: pnpm run type:check
 
   test:
     name: ⚡ Tests
@@ -65,10 +107,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: package.json
-          cache: 'npm'
-      - run: npm ci
+      - uses: pnpm/action-setup@v3
+        with:
+          version: latest
+          run_install: false
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - run: pnpm install --frozen-lockfile
       - name: ⚡ Tests
-        run: npm run test:coverage
+        run: pnpm run test:coverage
 
   build-and-release:
     name: 🚀 Build & release
@@ -82,11 +138,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: package.json
-          cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
-      - run: npm ci
+      - uses: pnpm/action-setup@v3
+        with:
+          version: latest
+          run_install: false
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - run: pnpm install --frozen-lockfile
       - name: 🔨 Build
-        run: npm run build
+        run: pnpm run build
       - name: 🚀 Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
