@@ -39,7 +39,7 @@
     "test:watch": "node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/test.ts test:watch",
     "test:coverage": "node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/test.ts test:coverage",
     "cz": "cz",
-    "semantic-release": "dotenv semantic-release",
+    "semantic-release": "semantic-release",
     "prepare": "husky"
   },
   "devDependencies": {
