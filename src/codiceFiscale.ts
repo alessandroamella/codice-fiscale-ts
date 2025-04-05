@@ -1,32 +1,37 @@
 import { municipalities } from './municipalities.ts';
 import type { FiscalCodeData, Person } from './types.ts';
 
-// Cache for municipal codes lookups
+// Create a proxy for municipal codes lookups
+const municipalCodesProxy = new Proxy(
+  {},
+  {
+    get: function(target: any, prop: string) {
+      // Initialize the map if it doesn't exist
+      if (!invertedMunicipalCodes) {
+        invertedMunicipalCodes = {};
+        municipalities.forEach((municipality) => {
+          invertedMunicipalCodes![municipality.code] = {
+            name: municipality.name,
+            province: municipality.province
+          };
+        });
+      }
+      
+      // Return the requested property from the built map
+      return invertedMunicipalCodes[prop];
+    }
+  }
+) as Record<string, { name: string; province: string }>;
+
+// No need for the separate function now, the proxy handles it automatically
+// Just use municipalCodesProxy directly like:
+// const municipality = municipalCodesProxy["12345"];
+
+// The original variable is kept for internal use by the proxy
 let invertedMunicipalCodes: Record<
   string,
   { name: string; province: string }
 > | null = null;
-
-/**
- * Build the inverted municipal codes map for efficient lookups
- */
-function buildInvertedMunicipalCodes(): Record<
-  string,
-  { name: string; province: string }
-> {
-  if (invertedMunicipalCodes) return invertedMunicipalCodes;
-
-  const codes: Record<string, { name: string; province: string }> = {};
-  municipalities.forEach((municipality) => {
-    codes[municipality.code] = {
-      name: municipality.name,
-      province: municipality.province
-    };
-  });
-
-  invertedMunicipalCodes = codes;
-  return codes;
-}
 
 /**
  * Normalize a string by removing spaces, accents and special characters
@@ -354,9 +359,8 @@ export function findBirthPlaceByCode(
     return undefined;
   }
 
-  // Ensure inverted map is initialized
-  const codes = buildInvertedMunicipalCodes();
-  return codes[code];
+  // Use the proxy directly - it will build the map if needed
+  return municipalCodesProxy[code];
 }
 
 /**
