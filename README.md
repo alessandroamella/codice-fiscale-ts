@@ -1,77 +1,88 @@
-# TypeScript Library Starter
+# codice-fiscale-ts
 
-![NPM](https://img.shields.io/npm/l/@gjuchault/typescript-library-starter)
-![NPM](https://img.shields.io/npm/v/@gjuchault/typescript-library-starter)
-![GitHub Workflow Status](https://github.com/gjuchault/typescript-library-starter/actions/workflows/typescript-library-starter.yml/badge.svg?branch=main)
+A TypeScript library for calculating, validating, and decoding Italian Fiscal Codes (Codice Fiscale).
 
-Yet another (opinionated) TypeScript library starter template.
+## Installation
 
-If you're looking for a backend service starter, check out my [typescript-service-starter](https://github.com/gjuchault/typescript-service-starter)
+```bash
+npm install codice-fiscale-ts
+# or
+yarn add codice-fiscale-ts
+# or
+pnpm add codice-fiscale-ts
+```
 
-## Opinions and limitations
+## Usage
 
-1. Relies as much as possible on each included library's defaults
-2. Only relies on GitHub Actions
-3. Does not include documentation generation
+### Calculating a Fiscal Code
 
-## Getting started
+```typescript
+import { calculateFiscalCode, type Person } from 'codice-fiscale-ts';
 
-1. `npx degit gjuchault/typescript-library-starter my-project` or click on the `Use this template` button on GitHub!
-2. `cd my-project`
-3. `npm install`
-4. `git init` (if you used degit)
-5. `node --run setup`
+const person: Person = {
+  firstName: 'Mario',
+  lastName: 'Rossi',
+  birthDate: new Date('1990-01-01'),
+  gender: 'M',
+  birthPlace: 'Roma'
+};
 
-To enable deployment, you will need to:
+const fiscalCode = calculateFiscalCode(person);
+console.log(fiscalCode); // RSSMRA90A01H501W (example)
+```
 
-1. Set up the `NPM_TOKEN` secret in GitHub Actions ([Settings > Secrets > Actions](https://github.com/gjuchault/typescript-library-starter/settings/secrets/actions))
-2. Give `GITHUB_TOKEN` write permissions for GitHub releases ([Settings > Actions > General](https://github.com/gjuchault/typescript-library-starter/settings/actions) > Workflow permissions)
+### Validating a Fiscal Code
 
-## Features
+```typescript
+import { isValidFiscalCode } from 'codice-fiscale-ts';
 
-### Node.js, npm version
+const isValid = isValidFiscalCode('RSSMRA90A01H501W');
+console.log(isValid); // true
+```
 
-TypeScript Library Starter relies on [Volta](https://volta.sh/) to ensure the Node.js version is consistent across developers. It's also used in the GitHub workflow file.
+### Decoding a Fiscal Code
 
-### TypeScript
+```typescript
+import { decodeFiscalCode } from 'codice-fiscale-ts';
 
-Leverages [esbuild](https://github.com/evanw/esbuild) for blazing-fast builds but keeps `tsc` to generate `.d.ts` files.
-Generates a single ESM build.
+const decodedData = decodeFiscalCode('RSSMRA90A01H501W');
+console.log(decodedData);
+/*
+{
+  lastName: 'RSS',
+  firstName: 'MRA',
+  birthYear: '1990',
+  birthMonth: 'January',
+  birthDay: 1,
+  gender: 'M',
+  birthPlace: 'Roma',
+  checkCharacter: 'W'
+}
+*/
+```
 
-Commands:
+## API Documentation
 
-- `build`: runs type checking, then ESM and `d.ts` files in the `build/` directory
-- `clean`: removes the `build/` directory
-- `type:check`: runs type checking
+### Functions
 
-### Tests
+- `calculateFiscalCode(person: Person): string` - Calculate a fiscal code from personal data
+- `isValidFiscalCode(fiscalCode: string): boolean` - Validate a fiscal code
+- `decodeFiscalCode(fiscalCode: string): FiscalCodeData` - Decode a fiscal code into its components
+- Other utility functions are also available for more granular control
 
-TypeScript Library Starter uses [Node.js's native test runner](https://nodejs.org/api/test.html). Coverage is done using [c8](https://github.com/bcoe/c8) but will switch to Node.js's one once out.
+### Types
 
-Commands:
+The package exports several TypeScript types to help with type checking:
 
-- `test`: runs test runner
-- `test:watch`: runs test runner in watch mode
-- `test:coverage`: runs test runner and generates coverage reports
+- `Person` - Basic person data needed for fiscal code calculation
+- `ItalianPerson` - Person born in Italy
+- `ForeignPerson` - Person born abroad
+- `FiscalCodeData` - The decoded components of a fiscal code
 
-### Format & lint
+## Contributing
 
-This template relies on [Biome](https://biomejs.dev/) to do both formatting & linting in no time.
-It also uses [cspell](https://github.com/streetsidesoftware/cspell) to ensure correct spelling.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-Commands:
+## License
 
-- `lint`: runs Biome with automatic fixing
-- `lint:check`: runs Biome without automatic fixing (used in CI)
-- `spell:check`: runs spell checking
-
-### Releasing
-
-Under the hood, this library uses [semantic-release](https://github.com/semantic-release/semantic-release) and [Commitizen](https://github.com/commitizen/cz-cli).
-The goal is to avoid manual release processes. Using `semantic-release` will automatically create a GitHub release (hence tags) as well as an npm release.
-Based on your commit history, `semantic-release` will automatically create a patch, feature, or breaking release.
-
-Commands:
-
-- `cz`: interactive CLI that helps you generate a proper git commit message, using [Commitizen](https://github.com/commitizen/cz-cli)
-- `semantic-release`: triggers a release (used in CI)
+This project is licensed under the MIT License - see the LICENSE file for details.
