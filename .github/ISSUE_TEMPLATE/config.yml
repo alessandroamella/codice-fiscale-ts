@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-    - name: GitHub Discussions
-      url: https://github.com/bitrey/codice-fiscale-ts/discussions
-      about: Please discuss non bug-related topics there
+  - name: GitHub Discussions
+    url: https://github.com/bitrey/codice-fiscale-ts/discussions
+    about: Please discuss non bug-related topics there
