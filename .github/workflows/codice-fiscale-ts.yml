@@ -13,6 +13,11 @@ on:
       - main
       - master
 
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 env:
   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
