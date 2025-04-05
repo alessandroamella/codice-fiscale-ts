@@ -18,39 +18,10 @@ permissions:
   issues: write
   pull-requests: write
 
-env:
-  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
 jobs:
-  dependencies:
-    name: 📦 Dependencies
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: package.json
-      - uses: pnpm/action-setup@v3
-        with:
-          version: latest
-          run_install: false
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - run: pnpm install --frozen-lockfile
-
   lint:
     name: 🔬 Lint
     runs-on: ubuntu-latest
-    needs: [dependencies]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -59,26 +30,13 @@ jobs:
       - uses: pnpm/action-setup@v3
         with:
           version: latest
-          run_install: false
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - run: pnpm install --frozen-lockfile
+          run_install: true
       - name: 🔬 Lint
         run: pnpm run lint
 
   type-check:
     name: ʦ Typecheck
     runs-on: ubuntu-latest
-    needs: [dependencies]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -87,26 +45,13 @@ jobs:
       - uses: pnpm/action-setup@v3
         with:
           version: latest
-          run_install: false
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - run: pnpm install --frozen-lockfile
+          run_install: true
       - name: ʦ Typecheck
         run: pnpm run type:check
 
   test:
     name: ⚡ Tests
     runs-on: ubuntu-latest
-    needs: [dependencies]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -115,19 +60,7 @@ jobs:
       - uses: pnpm/action-setup@v3
         with:
           version: latest
-          run_install: false
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - run: pnpm install --frozen-lockfile
+          run_install: true
       - name: ⚡ Tests
         run: pnpm run test:coverage
 
@@ -147,19 +80,7 @@ jobs:
       - uses: pnpm/action-setup@v3
         with:
           version: latest
-          run_install: false
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - run: pnpm install --frozen-lockfile
+          run_install: true
       - name: 🔨 Build
         run: pnpm run build
       - name: 🚀 Release
