@@ -14,7 +14,7 @@
       "prerelease": true
     }
   ],
-  "repositoryUrl": "https://github.com/bitrey/codice-fiscale-ts.git",
+  "repositoryUrl": "https://github.com/alessandroamella/codice-fiscale-ts.git",
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",

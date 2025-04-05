@@ -21,6 +21,7 @@ export {
 
 export type {
   BaseMunicipality,
+  BasePerson,
   BilingualMunicipality,
   FiscalCodeData,
   ForeignPerson,
