@@ -138,6 +138,7 @@ export function calculateFirstNameCode(firstName: string): string {
   if (consonants.length >= 4) {
     result = consonants[0]! + consonants[2]! + consonants[3]!;
   }
+
   // Otherwise take all available consonants
   else {
     result = consonants;
