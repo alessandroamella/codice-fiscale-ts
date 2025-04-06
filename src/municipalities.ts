@@ -1,16 +1,4 @@
-export type ItalianMunicipality = [
-  code: string,
-  name: string,
-  province: string
-];
-
-export type BilingualMunicipality = [
-  ...ItalianMunicipality,
-  italianName: string,
-  foreignName: string
-];
-
-export type Municipality = ItalianMunicipality | BilingualMunicipality;
+import type { Municipality } from './types.ts';
 
 export const municipalities: Municipality[] = [
   ['A001', 'Abano Terme', 'PD'],

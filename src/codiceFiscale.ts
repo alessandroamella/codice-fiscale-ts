@@ -223,9 +223,10 @@ export async function getMunicipalCodeFromPlace(
  * For foreign countries, the municipal code is 'Z' followed by the first three letters of the country code
  */
 export async function getCountryCode(countryCode: string): Promise<string> {
-  // This would require a separate implementation or data source for country codes
-  // For now, we'll just return the code prefixed with Z
-  return countryCode ? `Z${countryCode}` : '';
+  // Dynamically import countries data
+  const { countries } = await import('./countries.ts');
+  const country = countries.find((c) => c[1] === countryCode);
+  return country ? `Z${country[0]}` : '';
 }
 
 /**

@@ -21,24 +21,22 @@ export type FiscalCodeData = Partial<Person> & {
   birthProvince?: string;
 };
 
-// Base Municipality interface with common properties
-export interface BaseMunicipality {
-  name: string;
-  code: string;
-  province: string;
-}
 
-// Italian-only Municipality interface
-export interface ItalianMunicipality extends BaseMunicipality {
-  italianName?: undefined;
-  foreignName?: undefined;
-}
+export type ItalianMunicipality = [
+  code: string,
+  name: string,
+  province: string
+];
 
-// Bilingual Municipality interface (with foreign name)
-export interface BilingualMunicipality extends BaseMunicipality {
-  italianName: string;
-  foreignName: string;
-}
+export type BilingualMunicipality = [
+  ...ItalianMunicipality,
+  italianName: string,
+  foreignName: string
+];
 
-// Union type for all Municipality types
 export type Municipality = ItalianMunicipality | BilingualMunicipality;
+
+export type Country = [
+	code: string,
+	name: string
+];
