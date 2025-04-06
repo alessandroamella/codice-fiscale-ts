@@ -5,7 +5,7 @@ import type { FiscalCodeData, Person } from './types.ts';
 const municipalCodesProxy = new Proxy(
   {},
   {
-    get: function(target: any, prop: string) {
+    get: function (_target, prop: string) {
       // Initialize the map if it doesn't exist
       if (!invertedMunicipalCodes) {
         invertedMunicipalCodes = {};
@@ -16,7 +16,7 @@ const municipalCodesProxy = new Proxy(
           };
         });
       }
-      
+
       // Return the requested property from the built map
       return invertedMunicipalCodes[prop];
     }
