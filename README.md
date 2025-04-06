@@ -8,13 +8,13 @@ For an introduction and description in Italian, check out [my blog post](https:/
 
 This library was created to address several limitations in existing Italian Fiscal Code libraries:
 
-- **Automatically Updated Municipalities**: Other libraries like codice-fiscale-js aren't automatically updated when changes are made to the list of municipal cadastral codes. This library uses the [ISTAT API](https://situas-servizi.istat.it/publish/reportspooljson?pfun=61&pdata=01/01/1948) to stay up-to-date.
-- **Modern TypeScript Support**: Full TypeScript support with proper type definitions, distinguishing between people born in Italy (`ItalianPerson`) and abroad (`ForeignPerson`).
-- **Tree Shaking Support**: Built with modern ES modules to support tree shaking. For validating a fiscal code (`isValidFiscalCode`), the entire library is under 10kB (~5kB with tree shaking enabled)!
-- **Standardized Country Codes**: Uses ISO 3166-1 alpha-2 country codes instead of Italian country names when handling people born abroad.
-- **Comprehensive Features**: Supports both calculation (personal data → fiscal code) and reverse calculation (fiscal code → personal data).
-- **Cross-Platform**: Works in both browser and Node.js environments, with both CJS and ESM support.
-- **Well-Documented and Tested**: Every function is documented, tested, and deterministic.
+- 🆕 **Automatically Updated Municipalities**: Other libraries like codice-fiscale-js aren't automatically updated when changes are made to the list of municipal cadastral codes. This library uses the [ISTAT API](https://situas-servizi.istat.it/publish/reportspooljson?pfun=61&pdata=01/01/1948) to stay up-to-date.
+- 🔒 **Modern TypeScript Support**: Full TypeScript support with proper type definitions, distinguishing between people born in Italy (`ItalianPerson`) and abroad (`ForeignPerson`).
+- ⚡ **Tree Shaking Support**: Built with modern ES modules to support tree shaking. For validating a fiscal code (`isValidFiscalCode`), the entire library is under 10kB (~5kB with tree shaking enabled)!
+- 🌐 **Standardized Country Codes**: Uses ISO 3166-1 alpha-2 country codes instead of Italian country names when handling people born abroad.
+- 🧮 **Comprehensive Features**: Supports both calculation (personal data → fiscal code) and reverse calculation (fiscal code → personal data).
+- 🌐 **Cross-Platform**: Works in both browser and Node.js environments, with both CJS and ESM support.
+- 🐛 **Well-Documented and Tested**: Every function is documented, tested, and deterministic.
 
 ## Installation
 
