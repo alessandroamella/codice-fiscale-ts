@@ -1,0 +1,60 @@
+name: Update Municipalities
+
+on:
+  # Run on schedule (every Monday at 3 AM UTC)
+  schedule:
+    - cron: "0 3 * * 1"
+
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  update-municipalities:
+    name: Check for municipality updates
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Git identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v3
+        with:
+          version: latest
+          run_install: true
+
+      - name: Run update script
+        id: update
+        run: |
+          node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/update-municipalities.ts
+          echo "update_exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: Commit changes if municipalities were updated
+        if: steps.update.outputs.update_exit_code == '1'
+        run: node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/commit-municipalities-update.ts
+
+      - name: Push changes
+        if: steps.update.outputs.update_exit_code == '1'
+        run: git push
+
+      - name: Release
+        if: steps.update.outputs.update_exit_code == '1'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm run semantic-release

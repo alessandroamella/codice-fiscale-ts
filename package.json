@@ -46,6 +46,9 @@
     "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/test.ts test",
     "test:watch": "node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/test.ts test:watch",
     "test:coverage": "node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/test.ts test:coverage",
+    "update-municipalities": "node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/update-municipalities.ts",
+    "commit-municipalities-update": "node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/commit-municipalities-update.ts",
+    "update-and-commit": "npm run update-municipalities && npm run commit-municipalities-update",
     "cz": "cz",
     "semantic-release": "semantic-release",
     "prepare": "husky"
