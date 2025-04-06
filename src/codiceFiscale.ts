@@ -16,7 +16,7 @@ async function getMunicipalityByCode(
   if (!invertedMunicipalCodes) {
     invertedMunicipalCodes = {};
     // Dynamically import municipalities data
-    const { municipalities } = await import('./municipalities.ts');
+    const { municipalities } = await import('./data/municipalities.ts');
     for (const [code, name, province] of municipalities) {
       invertedMunicipalCodes![code] = {
         name,
@@ -210,7 +210,7 @@ export async function getMunicipalCodeFromPlace(
   place: string
 ): Promise<string> {
   // Dynamically import municipalities data
-  const { municipalities } = await import('./municipalities.ts');
+  const { municipalities } = await import('./data/municipalities.ts');
   const normalizedPlace = normalizeString(place.toUpperCase());
   const municipality = municipalities.find(
     (m) => normalizeString(m[1].toUpperCase()) === normalizedPlace
@@ -224,7 +224,7 @@ export async function getMunicipalCodeFromPlace(
  */
 export async function getCountryCode(countryCode: string): Promise<string> {
   // Dynamically import countries data
-  const { countries } = await import('./countries.ts');
+  const { countries } = await import('./data/countries.ts');
   const country = countries.find((c) => c[1] === countryCode);
   return country ? `Z${country[0]}` : '';
 }

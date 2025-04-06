@@ -1,4 +1,4 @@
-import type { Municipality } from './types.ts';
+import type { Municipality } from '../types.ts';
 
 export const municipalities: Municipality[] = [
   ['A001', 'Abano Terme', 'PD'],

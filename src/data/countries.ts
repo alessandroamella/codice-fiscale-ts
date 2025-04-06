@@ -1,4 +1,4 @@
-import type { Country } from "./types.ts";
+import type { Country } from "../types.ts";
 
 export const countries: Country[] = [
   ["Z100", "AL"],

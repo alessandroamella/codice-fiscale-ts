@@ -32,11 +32,11 @@ export type {
 } from './types.ts';
 
 export async function getMunicipalities() {
-  const { municipalities } = await import('./municipalities.ts');
+  const { municipalities } = await import('./data/municipalities.ts');
   return municipalities;
 }
 
 export async function getCountries() {
-  const { countries } = await import('./countries.ts');
+  const { countries } = await import('./data/countries.ts');
   return countries;
 }
