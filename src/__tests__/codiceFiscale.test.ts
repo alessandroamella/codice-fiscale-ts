@@ -125,7 +125,7 @@ await describe('Codice Fiscale Functions', async () => {
 
   await describe('calculateFiscalCode', async () => {
     await it('returns the complete fiscal code', async () => {
-      const fiscalCode = calculateFiscalCode(testPerson);
+      const fiscalCode = await calculateFiscalCode(testPerson);
       equal(fiscalCode.length, 16);
       equal(fiscalCode.substring(0, 6), 'RSSMRA');
       equal(fiscalCode.substring(6, 8), '80');
@@ -136,7 +136,7 @@ await describe('Codice Fiscale Functions', async () => {
 
   await describe('isValidFiscalCode', async () => {
     await it('validates correct fiscal codes', async () => {
-      const fiscalCode = calculateFiscalCode(testPerson);
+      const fiscalCode = await calculateFiscalCode(testPerson);
       equal(isValidFiscalCode(fiscalCode), true);
     });
 
@@ -149,8 +149,8 @@ await describe('Codice Fiscale Functions', async () => {
 
   await describe('decodeFiscalCode', async () => {
     await it('decodes a valid fiscal code', async () => {
-      const fiscalCode = calculateFiscalCode(testPerson);
-      const decoded = decodeFiscalCode(fiscalCode);
+      const fiscalCode = await calculateFiscalCode(testPerson);
+      const decoded = await decodeFiscalCode(fiscalCode);
 
       equal(decoded.gender, 'M');
       equal(decoded.birthDate!.getFullYear(), 1980);

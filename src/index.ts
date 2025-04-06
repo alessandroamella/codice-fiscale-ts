@@ -30,3 +30,8 @@ export type {
   Municipality,
   Person
 } from './types.ts';
+
+export async function getMunicipalities() {
+  const { municipalities } = await import('./municipalities.ts');
+  return municipalities;
+}

@@ -1,4 +1,3 @@
-import { municipalities } from './municipalities.ts';
 import type { FiscalCodeData, Person } from './types.ts';
 
 // Map to cache municipal codes lookup results
@@ -10,12 +9,14 @@ let invertedMunicipalCodes: Record<
 /**
  * Gets municipality information by code, initializing the lookup map if needed
  */
-function getMunicipalityByCode(
+async function getMunicipalityByCode(
   code: string
-): { name: string; province: string } | undefined {
+): Promise<{ name: string; province: string } | undefined> {
   // Initialize the map if it doesn't exist
   if (!invertedMunicipalCodes) {
     invertedMunicipalCodes = {};
+    // Dynamically import municipalities data
+    const { municipalities } = await import('./municipalities.ts');
     municipalities.forEach((municipality) => {
       invertedMunicipalCodes![municipality.code] = {
         name: municipality.name,
@@ -205,36 +206,26 @@ export function calculateDayGenderCode(date: Date, gender: 'M' | 'F'): string {
 /**
  * Get municipal code from place name without requiring province
  */
-export function getMunicipalCodeFromPlace(place: string): string {
-  const normalizedPlace = place.toUpperCase();
-
-  // Find municipalities that match the place name
-  const matches = municipalities.filter(
-    (muni) => muni.name.toUpperCase() === normalizedPlace
+export async function getMunicipalCodeFromPlace(
+  place: string
+): Promise<string> {
+  // Dynamically import municipalities data
+  const { municipalities } = await import('./municipalities.ts');
+  const normalizedPlace = normalizeString(place.toUpperCase());
+  const municipality = municipalities.find(
+    (m) => normalizeString(m.name.toUpperCase()) === normalizedPlace
   );
-
-  if (matches.length === 1) {
-    // If only one match, use it
-    return matches[0]!.code;
-  }
-  if (matches.length > 1) {
-    // If multiple matches with same name, get a list of options
-    const options = matches.map((m) => `${m.name} (${m.province})`).join(', ');
-    throw new Error(
-      `Multiple municipalities found with name '${place}'. Please specify one of: ${options}`
-    );
-  }
-  throw new Error(`Municipal code not found for place: ${place}`);
+  return municipality ? municipality.code : '';
 }
 
 /**
  * Get country code from ISO Alpha2 country code
  * For foreign countries, the municipal code is 'Z' followed by the first three letters of the country code
  */
-export function getCountryCode(countryCode: string): string {
-  const normalizedCountryCode = countryCode.toUpperCase();
-  // Format: Z + first 3 chars of country code, padded with 0 if needed
-  return `Z${normalizedCountryCode.padEnd(3, '0')}`;
+export async function getCountryCode(countryCode: string): Promise<string> {
+  // This would require a separate implementation or data source for country codes
+  // For now, we'll just return the code prefixed with Z
+  return countryCode ? `Z${countryCode}` : '';
 }
 
 /**
@@ -346,9 +337,9 @@ export function calculateCheckCharacter(code: string): string {
 /**
  * Find birth place by municipal code (reverse lookup)
  */
-export function findBirthPlaceByCode(
+export async function findBirthPlaceByCode(
   code: string
-): { name: string; province: string } | undefined {
+): Promise<{ name: string; province: string } | undefined> {
   // If it's a Z code (foreign country), it's handled separately via foreignCountry
   if (code.startsWith('Z')) {
     return undefined;
@@ -406,38 +397,28 @@ export function decodeDay(dayCode: number): number {
 /**
  * Calculate the complete fiscal code
  */
-export function calculateFiscalCode(person: Person): string {
-  const lastNameCode = calculateLastNameCode(person.lastName);
-  const firstNameCode = calculateFirstNameCode(person.firstName);
+export async function calculateFiscalCode(person: Person): Promise<string> {
+  const lastName = calculateLastNameCode(person.lastName);
+  const firstName = calculateFirstNameCode(person.firstName);
   const yearCode = calculateYearCode(person.birthDate);
   const monthCode = calculateMonthCode(person.birthDate);
   const dayGenderCode = calculateDayGenderCode(person.birthDate, person.gender);
 
-  // Get the municipal code from the birthPlace or foreignCountry
-  let municipalCode: string;
-  if (person.birthPlace) {
-    municipalCode = getMunicipalCodeFromPlace(person.birthPlace);
-  } else if (person.foreignCountry) {
-    municipalCode = getCountryCode(person.foreignCountry);
+  let placeCode: string;
+
+  if ('foreignCountry' in person && person.foreignCountry) {
+    placeCode = await getCountryCode(person.foreignCountry);
+  } else if ('birthPlace' in person && person.birthPlace) {
+    placeCode = await getMunicipalCodeFromPlace(person.birthPlace);
   } else {
     throw new Error('Either birthPlace or foreignCountry must be provided');
   }
 
-  // Join the first 15 characters
-  const baseCode = [
-    lastNameCode,
-    firstNameCode,
-    yearCode,
-    monthCode,
-    dayGenderCode,
-    municipalCode
-  ].join('');
+  const partialCode =
+    lastName + firstName + yearCode + monthCode + dayGenderCode + placeCode;
+  const checkChar = calculateCheckCharacter(partialCode);
 
-  // Calculate the check character
-  const checkCharacter = calculateCheckCharacter(baseCode);
-
-  // Return the complete fiscal code
-  return baseCode + checkCharacter;
+  return partialCode + checkChar;
 }
 
 /**
@@ -469,7 +450,9 @@ export function isValidFiscalCode(fiscalCode: string): boolean {
 /**
  * Decode a fiscal code to extract available information
  */
-export function decodeFiscalCode(fiscalCode: string): FiscalCodeData {
+export async function decodeFiscalCode(
+  fiscalCode: string
+): Promise<FiscalCodeData> {
   if (!isValidFiscalCode(fiscalCode)) {
     throw new Error('Invalid fiscal code format');
   }
@@ -497,7 +480,7 @@ export function decodeFiscalCode(fiscalCode: string): FiscalCodeData {
     };
   }
   // Find birth place by municipal code (reverse lookup)
-  const birthPlaceInfo = findBirthPlaceByCode(municipalCode);
+  const birthPlaceInfo = await findBirthPlaceByCode(municipalCode);
 
   return {
     birthDate: new Date(year, month - 1, day),

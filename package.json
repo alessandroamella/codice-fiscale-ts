@@ -3,7 +3,15 @@
   "version": "0.0.0-development",
   "description": "A TypeScript library for calculating, validating, and decoding Italian Fiscal Codes (Codice Fiscale)",
   "type": "module",
-  "exports": "./build/index.js",
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "import": "./build/index.mjs",
+      "require": "./build/index.cjs"
+    }
+  },
+  "main": "./build/index.cjs",
+  "module": "./build/index.mjs",
   "types": "./build/index.d.ts",
   "license": "MIT",
   "engines": {
