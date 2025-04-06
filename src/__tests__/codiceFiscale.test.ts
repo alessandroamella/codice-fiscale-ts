@@ -12,10 +12,12 @@ import {
   decodeFiscalCode,
   extractConsonants,
   extractVowels,
+  isForeignPerson,
+  isItalianPerson,
   isValidFiscalCode,
-  normalizeString
+  normalizeString,
+  validatePerson
 } from '../index.ts';
-import { isForeignPerson, isItalianPerson, validatePerson } from '../types.ts';
 
 // Test data
 const testPerson = {

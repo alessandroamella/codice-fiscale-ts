@@ -1,7 +1,7 @@
 import type { FiscalCodeData, Person } from './types.ts';
 import { isForeignPerson, isItalianPerson, validatePerson } from './types.ts';
 
-// Map to cache municipal codes lookup results
+// Map to cache cadastral codes lookup results
 let invertedMunicipalCodes: Record<
   string,
   { name: string; province: string }
@@ -205,7 +205,7 @@ export function calculateDayGenderCode(date: Date, gender: 'M' | 'F'): string {
 }
 
 /**
- * Get municipal code from place name without requiring province
+ * Get cadastral code from place name without requiring province
  */
 export async function getMunicipalCodeFromPlace(
   place: string
@@ -221,7 +221,7 @@ export async function getMunicipalCodeFromPlace(
 
 /**
  * Get country code from ISO Alpha2 country code
- * For foreign countries, the municipal code is 'Z' followed by three digits
+ * For foreign countries, the cadastral code is 'Z' followed by three digits
  */
 export async function getCountryCode(countryCode: string): Promise<string> {
   // Dynamically import countries data
@@ -337,7 +337,7 @@ export function calculateCheckCharacter(code: string): string {
 }
 
 /**
- * Find birth place by municipal code (reverse lookup)
+ * Find birth place by cadastral code (reverse lookup)
  */
 export async function findBirthPlaceByCode(
   code: string
@@ -486,7 +486,7 @@ export async function decodeFiscalCode(
 
   // Check if born outside Italy (Z code)
   if (municipalCode.startsWith('Z')) {
-    // Need to look up the ISO country code from the municipal code
+    // Need to look up the ISO country code from the cadastral code
     const { countries } = await import('./data/countries.ts');
     const countryEntry = countries.find((c) => c[0] === municipalCode);
     const foreignCountry = countryEntry
@@ -498,7 +498,7 @@ export async function decodeFiscalCode(
       foreignCountry
     };
   }
-  // Find birth place by municipal code (reverse lookup)
+  // Find birth place by cadastral code (reverse lookup)
   const birthPlaceInfo = await findBirthPlaceByCode(municipalCode);
 
   return {
