@@ -15,6 +15,7 @@ import {
   isValidFiscalCode,
   normalizeString
 } from '../index.ts';
+import { isForeignPerson, isItalianPerson, validatePerson } from '../types.ts';
 
 // Test data
 const testPerson = {
@@ -24,6 +25,15 @@ const testPerson = {
   gender: 'M' as const,
   birthPlace: 'ROMA',
   birthProvince: 'RM'
+};
+
+// Test foreign person
+const testForeignPerson = {
+  firstName: 'John',
+  lastName: 'Smith',
+  birthDate: new Date(1980, 0, 1),
+  gender: 'M' as const,
+  foreignCountry: 'US'
 };
 
 await describe('Codice Fiscale Functions', async () => {
@@ -158,6 +168,18 @@ await describe('Codice Fiscale Functions', async () => {
       equal(decoded.birthDate!.getDate(), 1);
     });
 
+    await it('decodes a valid fiscal code for a foreign person', async () => {
+      const fiscalCode = await calculateFiscalCode(testForeignPerson);
+      const decoded = await decodeFiscalCode(fiscalCode);
+
+      equal(decoded.gender, 'M');
+      equal(decoded.birthDate!.getFullYear(), 1980);
+      equal(decoded.birthDate!.getMonth(), 0); // January
+      equal(decoded.birthDate!.getDate(), 1);
+      equal(decoded.foreignCountry, 'US'); // Should extract the foreign country code
+      equal(decoded.birthPlace, undefined); // Should not have a birth place
+    });
+
     await it('throws error for invalid fiscal code', async () => {
       try {
         await decodeFiscalCode('INVALID');
@@ -166,6 +188,154 @@ await describe('Codice Fiscale Functions', async () => {
       } catch (error) {
         equal((error as Error).message, 'Invalid fiscal code format');
       }
+    });
+  });
+
+  await describe('Type validation functions', async () => {
+    await describe('isItalianPerson', async () => {
+      await it('correctly identifies an Italian person', async () => {
+        equal(isItalianPerson(testPerson), true);
+        equal(isItalianPerson(testForeignPerson), false);
+      });
+    });
+
+    await describe('isForeignPerson', async () => {
+      await it('correctly identifies a Foreign person', async () => {
+        equal(isForeignPerson(testForeignPerson), true);
+        equal(isForeignPerson(testPerson), false);
+      });
+    });
+
+    await describe('validatePerson', async () => {
+      await it('validates correct Italian person', async () => {
+        // Should not throw
+        validatePerson(testPerson);
+        equal(true, true); // Just to have an assertion
+      });
+
+      await it('validates correct Foreign person', async () => {
+        // Should not throw
+        validatePerson(testForeignPerson);
+        equal(true, true); // Just to have an assertion
+      });
+
+      await it('throws error for missing firstName', async () => {
+        try {
+          validatePerson({
+            ...testPerson,
+            firstName: ''
+          });
+          equal(true, false, 'Expected to throw error');
+        } catch (error) {
+          equal((error as Error).message, 'First name is required');
+        }
+      });
+
+      await it('throws error for missing lastName', async () => {
+        try {
+          validatePerson({
+            ...testPerson,
+            lastName: ''
+          });
+          equal(true, false, 'Expected to throw error');
+        } catch (error) {
+          equal((error as Error).message, 'Last name is required');
+        }
+      });
+
+      await it('throws error for invalid birthDate', async () => {
+        try {
+          validatePerson({
+            ...testPerson,
+            birthDate: new Date('invalid-date')
+          });
+          equal(true, false, 'Expected to throw error');
+        } catch (error) {
+          equal((error as Error).message, 'Valid birth date is required');
+        }
+      });
+
+      await it('throws error for invalid gender', async () => {
+        try {
+          validatePerson({
+            ...testPerson,
+            gender: 'X' as 'M' | 'F' // Type assertion for test purposes
+          });
+          equal(true, false, 'Expected to throw error');
+        } catch (error) {
+          equal((error as Error).message, 'Gender must be either "M" or "F"');
+        }
+      });
+
+      await it('throws error when both birthPlace and foreignCountry are provided', async () => {
+        try {
+          // Create object with both birthPlace and foreignCountry for testing
+          const invalidPerson = {
+            firstName: 'Mario',
+            lastName: 'Rossi',
+            birthDate: new Date(1980, 0, 1),
+            gender: 'M' as const,
+            birthPlace: 'ROMA',
+            foreignCountry: 'US'
+          };
+          // Use type assertion for test purposes
+          validatePerson(
+            invalidPerson as unknown as import('../types.ts').Person
+          );
+          equal(true, false, 'Expected to throw error');
+        } catch (error) {
+          equal(
+            (error as Error).message,
+            'Either birthPlace or foreignCountry must be provided, but not both'
+          );
+        }
+      });
+
+      await it('throws error when neither birthPlace nor foreignCountry is provided', async () => {
+        try {
+          // Create object without birthPlace or foreignCountry
+          const invalidPerson = {
+            firstName: 'Mario',
+            lastName: 'Rossi',
+            birthDate: new Date(1980, 0, 1),
+            gender: 'M' as const
+          };
+          // Use type assertion for test purposes
+          validatePerson(
+            invalidPerson as unknown as import('../types.ts').Person
+          );
+          equal(true, false, 'Expected to throw error');
+        } catch (error) {
+          equal(
+            (error as Error).message,
+            'Either birthPlace or foreignCountry must be provided, but not both'
+          );
+        }
+      });
+    });
+  });
+
+  await describe('calculateFiscalCode with validation', async () => {
+    await it('throws error for invalid person data', async () => {
+      try {
+        await calculateFiscalCode({
+          ...testPerson,
+          firstName: '' // Invalid data
+        });
+        equal(true, false, 'Expected to throw error');
+      } catch (error) {
+        equal((error as Error).message, 'First name is required');
+      }
+    });
+
+    await it('calculates fiscal code for valid Italian person', async () => {
+      const fiscalCode = await calculateFiscalCode(testPerson);
+      equal(fiscalCode.length, 16);
+    });
+
+    await it('calculates fiscal code for valid Foreign person', async () => {
+      const fiscalCode = await calculateFiscalCode(testForeignPerson);
+      equal(fiscalCode.length, 16);
     });
   });
 });

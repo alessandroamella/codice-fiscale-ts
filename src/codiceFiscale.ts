@@ -1,4 +1,5 @@
 import type { FiscalCodeData, Person } from './types.ts';
+import { isForeignPerson, isItalianPerson, validatePerson } from './types.ts';
 
 // Map to cache municipal codes lookup results
 let invertedMunicipalCodes: Record<
@@ -220,13 +221,13 @@ export async function getMunicipalCodeFromPlace(
 
 /**
  * Get country code from ISO Alpha2 country code
- * For foreign countries, the municipal code is 'Z' followed by the first three letters of the country code
+ * For foreign countries, the municipal code is 'Z' followed by three digits
  */
 export async function getCountryCode(countryCode: string): Promise<string> {
   // Dynamically import countries data
   const { countries } = await import('./data/countries.ts');
   const country = countries.find((c) => c[1] === countryCode);
-  return country ? `Z${country[0]}` : '';
+  return country ? country[0] : '';
 }
 
 /**
@@ -399,6 +400,9 @@ export function decodeDay(dayCode: number): number {
  * Calculate the complete fiscal code
  */
 export async function calculateFiscalCode(person: Person): Promise<string> {
+  // Validate person object
+  validatePerson(person);
+
   const lastName = calculateLastNameCode(person.lastName);
   const firstName = calculateFirstNameCode(person.firstName);
   const yearCode = calculateYearCode(person.birthDate);
@@ -407,12 +411,15 @@ export async function calculateFiscalCode(person: Person): Promise<string> {
 
   let placeCode: string;
 
-  if ('foreignCountry' in person && person.foreignCountry) {
+  if (isForeignPerson(person)) {
     placeCode = await getCountryCode(person.foreignCountry);
-  } else if ('birthPlace' in person && person.birthPlace) {
+  } else if (isItalianPerson(person)) {
     placeCode = await getMunicipalCodeFromPlace(person.birthPlace);
   } else {
-    throw new Error('Either birthPlace or foreignCountry must be provided');
+    // This should never happen because validatePerson would throw first
+    throw new Error(
+      'Either birthPlace or foreignCountry must be provided, but not both'
+    );
   }
 
   const partialCode =
@@ -471,12 +478,23 @@ export async function decodeFiscalCode(
   // Determine gender
   const gender: 'M' | 'F' = dayGenderCode > 40 ? 'F' : 'M';
 
+  // Create common person data
+  const personData: FiscalCodeData = {
+    birthDate: new Date(year, month - 1, day),
+    gender
+  };
+
   // Check if born outside Italy (Z code)
   if (municipalCode.startsWith('Z')) {
-    const foreignCountry = municipalCode.substring(1);
+    // Need to look up the ISO country code from the municipal code
+    const { countries } = await import('./data/countries.ts');
+    const countryEntry = countries.find((c) => c[0] === municipalCode);
+    const foreignCountry = countryEntry
+      ? countryEntry[1]
+      : municipalCode.substring(1);
+
     return {
-      birthDate: new Date(year, month - 1, day),
-      gender,
+      ...personData,
       foreignCountry
     };
   }
@@ -484,8 +502,7 @@ export async function decodeFiscalCode(
   const birthPlaceInfo = await findBirthPlaceByCode(municipalCode);
 
   return {
-    birthDate: new Date(year, month - 1, day),
-    gender,
+    ...personData,
     birthPlace: birthPlaceInfo?.name,
     birthProvince: birthPlaceInfo?.province
   };
