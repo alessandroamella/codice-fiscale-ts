@@ -160,7 +160,7 @@ await describe('Codice Fiscale Functions', async () => {
 
     await it('throws error for invalid fiscal code', async () => {
       try {
-        decodeFiscalCode('INVALID');
+        await decodeFiscalCode('INVALID');
         // Should not reach here
         equal(true, false, 'Expected to throw error');
       } catch (error) {
