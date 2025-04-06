@@ -27,7 +27,7 @@ const person: Person = {
   birthPlace: 'Roma'
 };
 
-const fiscalCode = calculateFiscalCode(person);
+const fiscalCode = await calculateFiscalCode(person);
 console.log(fiscalCode); // RSSMRA90A01H501W (example)
 ```
 
@@ -45,7 +45,7 @@ console.log(isValid); // true
 ```typescript
 import { decodeFiscalCode } from 'codice-fiscale-ts';
 
-const decodedData = decodeFiscalCode('RSSMRA90A01H501W');
+const decodedData = await decodeFiscalCode('RSSMRA90A01H501W');
 console.log(decodedData);
 /*
 {
@@ -65,9 +65,9 @@ console.log(decodedData);
 
 ### Functions
 
-- `calculateFiscalCode(person: Person): string` - Calculate a fiscal code from personal data
+- `calculateFiscalCode(person: Person): Promise<string>` - Calculate a fiscal code from personal data
 - `isValidFiscalCode(fiscalCode: string): boolean` - Validate a fiscal code
-- `decodeFiscalCode(fiscalCode: string): FiscalCodeData` - Decode a fiscal code into its components
+- `decodeFiscalCode(fiscalCode: string): Promise<FiscalCodeData>` - Decode a fiscal code into its components
 - Other utility functions are also available for more granular control
 
 ### Types
