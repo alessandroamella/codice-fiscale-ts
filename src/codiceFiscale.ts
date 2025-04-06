@@ -17,12 +17,12 @@ async function getMunicipalityByCode(
     invertedMunicipalCodes = {};
     // Dynamically import municipalities data
     const { municipalities } = await import('./municipalities.ts');
-    municipalities.forEach((municipality) => {
-      invertedMunicipalCodes![municipality.code] = {
-        name: municipality.name,
-        province: municipality.province
+    for (const [code, name, province] of municipalities) {
+      invertedMunicipalCodes![code] = {
+        name,
+        province
       };
-    });
+    }
   }
 
   // Return the requested property from the built map
@@ -213,9 +213,9 @@ export async function getMunicipalCodeFromPlace(
   const { municipalities } = await import('./municipalities.ts');
   const normalizedPlace = normalizeString(place.toUpperCase());
   const municipality = municipalities.find(
-    (m) => normalizeString(m.name.toUpperCase()) === normalizedPlace
+    (m) => normalizeString(m[1].toUpperCase()) === normalizedPlace
   );
-  return municipality ? municipality.code : '';
+  return municipality ? municipality[0] : '';
 }
 
 /**

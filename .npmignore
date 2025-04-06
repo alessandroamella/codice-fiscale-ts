@@ -9,12 +9,11 @@ scripts/
 .gitignore
 .prettierignore
 .prettierrc
-.cspell.json
 .releaserc.json
 tsconfig.json
 tsconfig.build.json
 api-extractor.json
-eslint.config.js
+biome.json
 pnpm-lock.yaml
 CONTRIBUTING.md
 CODE_OF_CONDUCT.md

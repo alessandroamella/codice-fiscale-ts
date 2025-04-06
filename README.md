@@ -2,6 +2,16 @@
 
 A TypeScript library for calculating, validating, and decoding Italian Fiscal Codes (Codice Fiscale).
 
+## Why This Library?
+
+This library was created to address several limitations in existing Italian Fiscal Code libraries:
+
+- **Up-to-date Municipalities Data**: Other libraries often rely on outdated lists of Italian municipalities.
+- **Modern TypeScript Support**: Full TypeScript support with proper type definitions.
+- **Tree Shaking Support**: Built with modern ES modules to support tree shaking.
+- **Functional Approach**: Uses a simple functional approach instead of OOP, making it easier to use and integrate.
+- **Foreign Country Support**: Properly handles people born outside Italy with appropriate type definitions.
+
 ## Installation
 
 ```bash
@@ -49,14 +59,10 @@ const decodedData = await decodeFiscalCode('RSSMRA90A01H501W');
 console.log(decodedData);
 /*
 {
-  lastName: 'RSS',
-  firstName: 'MRA',
-  birthYear: '1990',
-  birthMonth: 'January',
-  birthDay: 1,
+  birthDate: new Date('1990-01-01'),
   gender: 'M',
   birthPlace: 'Roma',
-  checkCharacter: 'W'
+  birthProvince: 'RM'
 }
 */
 ```
