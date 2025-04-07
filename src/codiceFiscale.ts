@@ -216,7 +216,10 @@ export async function getMunicipalCodeFromPlace(
   const municipality = municipalities.find(
     (m) => normalizeString(m[1].toUpperCase()) === normalizedPlace
   );
-  return municipality ? municipality[0] : '';
+  if (!municipality) {
+    throw new Error(`Invalid birth place: ${place}`);
+  }
+  return municipality[0];
 }
 
 /**
@@ -226,8 +229,13 @@ export async function getMunicipalCodeFromPlace(
 export async function getCountryCode(countryCode: string): Promise<string> {
   // Dynamically import countries data
   const { countries } = await import('./data/countries.ts');
-  const country = countries.find((c) => c[1] === countryCode);
-  return country ? country[0] : '';
+  const country = countries.find(([, alpha2]) => alpha2 === countryCode);
+
+  if (!country) {
+    throw new Error(`Invalid country code: ${countryCode}`);
+  }
+
+  return country[0]!;
 }
 
 /**
@@ -341,14 +349,20 @@ export function calculateCheckCharacter(code: string): string {
  */
 export async function findBirthPlaceByCode(
   code: string
-): Promise<{ name: string; province: string } | undefined> {
+): Promise<{ name: string; province: string }> {
   // If it's a Z code (foreign country), it's handled separately via foreignCountry
   if (code.startsWith('Z')) {
-    return undefined;
+    throw new Error(
+      `Invalid municipality code: ${code} (foreign country code)`
+    );
   }
 
   // Use the lookup function directly - it will build the map if needed
-  return getMunicipalityByCode(code);
+  const result = await getMunicipalityByCode(code);
+  if (!result) {
+    throw new Error(`Invalid municipality code: ${code}`);
+  }
+  return result;
 }
 
 /**
@@ -418,7 +432,7 @@ export async function calculateFiscalCode(person: Person): Promise<string> {
   } else {
     // This should never happen because validatePerson would throw first
     throw new Error(
-      'Either birthPlace or foreignCountry must be provided, but not both'
+      'Either birthPlace must be provided with foreignCountry being undefined or "IT", or foreignCountry must be provided (not "IT") without birthPlace'
     );
   }
 

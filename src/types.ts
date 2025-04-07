@@ -7,7 +7,7 @@ export interface BasePerson {
 
 export interface ItalianPerson extends BasePerson {
   birthPlace: string;
-  foreignCountry?: never;
+  foreignCountry?: 'IT' | undefined;
 }
 
 export interface ForeignPerson extends BasePerson {
@@ -25,7 +25,7 @@ export function isItalianPerson(person: Person): person is ItalianPerson {
     'birthPlace' in person &&
     typeof person.birthPlace === 'string' &&
     person.birthPlace.trim() !== '' &&
-    !('foreignCountry' in person)
+    (!('foreignCountry' in person) || person.foreignCountry === 'IT')
   );
 }
 
@@ -36,7 +36,8 @@ export function isForeignPerson(person: Person): person is ForeignPerson {
   return (
     'foreignCountry' in person &&
     typeof person.foreignCountry === 'string' &&
-    person.foreignCountry.trim() !== '' &&
+    person.foreignCountry.length === 2 && // alpha2 country code
+    person.foreignCountry !== 'IT' &&
     !('birthPlace' in person)
   );
 }
@@ -65,14 +66,15 @@ export function validatePerson(person: Person): void {
   if (!person.gender || !['M', 'F'].includes(person.gender))
     throw new Error('Gender must be either "M" or "F"');
 
-  // Check that either birthPlace or foreignCountry is provided but not both
+  // Check that either birthPlace is provided with foreignCountry being undefined or 'IT',
+  // or foreignCountry is provided (not 'IT') without birthPlace
   if (isItalianPerson(person)) {
     // Additional validation for Italian person if needed
   } else if (isForeignPerson(person)) {
     // Additional validation for Foreign person if needed
   } else {
     throw new Error(
-      'Either birthPlace or foreignCountry must be provided, but not both'
+      'Either birthPlace must be provided with foreignCountry being undefined or "IT", or foreignCountry must be provided (not "IT") without birthPlace'
     );
   }
 }
@@ -88,7 +90,7 @@ export type FiscalCodeData = {
 };
 
 export type ItalianMunicipality = [
-  code: string,
+  cadastralCode: string,
   name: string,
   province: string
 ];
@@ -101,4 +103,4 @@ export type BilingualMunicipality = [
 
 export type Municipality = ItalianMunicipality | BilingualMunicipality;
 
-export type Country = [code: string, name: string];
+export type Country = [cadastralCode: string, alpha2: string];

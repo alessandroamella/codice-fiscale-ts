@@ -2,17 +2,30 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// Define the API URL
-const API_URL =
+// Define the API URLs
+const ISTAT_API_URL =
   'https://situas-servizi.istat.it/publish/reportspooljson?pfun=61&pdata=01/01/1948';
+const GITHUB_API_URL =
+  'https://raw.githubusercontent.com/matteocontrini/comuni-json/refs/heads/master/comuni.json';
 
-// Define the type for the API response
+// Define the types for the API responses
 interface ApiMunicipality {
   COD_CATASTO: string;
   COMUNE: string;
   COMUNE_IT?: string;
   COMUNE_A?: string;
   SIGLA_AUTOMOBILISTICA: string;
+}
+
+interface NewApiMunicipality {
+  nome: string;
+  codice: string;
+  sigla: string;
+  codiceCatastale: string;
+  provincia: {
+    codice: string;
+    nome: string;
+  };
 }
 
 // Path to the municipalities.ts file
@@ -25,7 +38,7 @@ const municipalitiesFilePath = path.resolve(
 async function fetchMunicipalities(): Promise<ApiMunicipality[]> {
   try {
     console.log('Fetching municipalities from API...');
-    const response = await fetch(API_URL);
+    const response = await fetch(ISTAT_API_URL);
 
     if (!response.ok) {
       throw new Error(
@@ -47,15 +60,39 @@ async function fetchMunicipalities(): Promise<ApiMunicipality[]> {
   }
 }
 
+async function fetchNewMunicipalities(): Promise<NewApiMunicipality[]> {
+  try {
+    console.log('Fetching municipalities from GitHub...');
+    const response = await fetch(GITHUB_API_URL);
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch data: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+    console.log(`Fetched ${data.length} municipalities from GitHub`);
+    return data;
+  } catch (error) {
+    console.error('Error fetching municipalities from GitHub:', error);
+    throw error;
+  }
+}
+
 function formatMunicipalitiesArray(
-  apiMunicipalities: ApiMunicipality[]
+  newMunicipalities: NewApiMunicipality[],
+  istatMunicipalities: ApiMunicipality[]
 ): string[] {
-  const municipalityEntries = apiMunicipalities
+  // Create a map of ISTAT municipalities by cadastral code for quick lookup
+  const istatMap = new Map(istatMunicipalities.map((m) => [m.COD_CATASTO, m]));
+
+  const municipalityEntries = newMunicipalities
     .map((municipality) => {
       if (
-        !municipality.COD_CATASTO ||
-        !municipality.COMUNE ||
-        !municipality.SIGLA_AUTOMOBILISTICA
+        !municipality.codiceCatastale ||
+        !municipality.nome ||
+        !municipality.sigla
       ) {
         console.warn(
           `Skipping incomplete municipality data: ${JSON.stringify(municipality)}`
@@ -63,23 +100,26 @@ function formatMunicipalitiesArray(
         return null;
       }
 
-      // Check if it's a bilingual municipality
-      if (municipality.COMUNE_IT && municipality.COMUNE_A) {
+      // Check if we have ISTAT data with foreign names for this municipality
+      const istatData = istatMap.get(municipality.codiceCatastale);
+
+      if (istatData?.COMUNE_IT && istatData?.COMUNE_A) {
+        // Bilingual municipality
         const municipalityData = [
-          municipality.COD_CATASTO,
-          municipality.COMUNE,
-          municipality.SIGLA_AUTOMOBILISTICA,
-          municipality.COMUNE_IT,
-          municipality.COMUNE_A
+          municipality.codiceCatastale,
+          municipality.nome,
+          municipality.sigla,
+          istatData.COMUNE_IT,
+          istatData.COMUNE_A
         ];
         return `  ${JSON.stringify(municipalityData)}`;
       }
 
       // Regular municipality
       const municipalityData = [
-        municipality.COD_CATASTO,
-        municipality.COMUNE,
-        municipality.SIGLA_AUTOMOBILISTICA
+        municipality.codiceCatastale,
+        municipality.nome,
+        municipality.sigla
       ];
       return `  ${JSON.stringify(municipalityData)}`;
     })
@@ -203,12 +243,17 @@ ${municipalityEntries.join(',\n')}
 
 async function main() {
   try {
-    // Fetch municipalities from API
-    const apiMunicipalities = await fetchMunicipalities();
+    // Fetch municipalities from both sources
+    const [istatMunicipalities, newMunicipalities] = await Promise.all([
+      fetchMunicipalities(),
+      fetchNewMunicipalities()
+    ]);
 
     // Format the municipalities into array entries
-    const formattedMunicipalities =
-      formatMunicipalitiesArray(apiMunicipalities);
+    const formattedMunicipalities = formatMunicipalitiesArray(
+      newMunicipalities,
+      istatMunicipalities
+    );
 
     // Get current municipalities
     const currentMunicipalities = getCurrentMunicipalities();

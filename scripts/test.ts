@@ -30,6 +30,11 @@ async function runTests({
       { stdio: 'inherit', env: { ...process.env, ...env } }
     );
 
+    // print logs
+    nodeProcess.on('message', (message) => {
+      console.log('MESSAGE:', message);
+    });
+
     nodeProcess.on('close', (code) => {
       if (code === 0) {
         console.log(`🚀 ran tests in ${Date.now() - time}ms`);

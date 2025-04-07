@@ -288,7 +288,7 @@ await describe('Codice Fiscale Functions', async () => {
         } catch (error) {
           equal(
             (error as Error).message,
-            'Either birthPlace or foreignCountry must be provided, but not both'
+            'Either birthPlace must be provided with foreignCountry being undefined or "IT", or foreignCountry must be provided (not "IT") without birthPlace'
           );
         }
       });
@@ -310,7 +310,7 @@ await describe('Codice Fiscale Functions', async () => {
         } catch (error) {
           equal(
             (error as Error).message,
-            'Either birthPlace or foreignCountry must be provided, but not both'
+            'Either birthPlace must be provided with foreignCountry being undefined or "IT", or foreignCountry must be provided (not "IT") without birthPlace'
           );
         }
       });
