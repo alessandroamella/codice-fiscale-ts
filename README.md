@@ -4,6 +4,10 @@ A TypeScript library for calculating, validating, and decoding Italian Fiscal Co
 
 For an introduction and description in Italian, check out [my blog post](https://blog.bitrey.dev/codice-fiscale-ts).
 
+## Demo
+
+Check out the [live demo](https://cf.bitrey.it) to see codice-fiscale-ts in action!
+
 ## Why This Library?
 
 This library was created to address several limitations in existing Italian Fiscal Code libraries:
@@ -97,7 +101,7 @@ console.log(decodedData);
 - `findBirthPlaceByCode(code: string): Promise<{name: string, province: string} | undefined>` - Find birth place by cadastral code
 - `getMunicipalCodeFromPlace(place: string): Promise<string>` - Get cadastral code from place name
 - `getMunicipalities(): Promise<Municipality[]>` - Get all Italian municipalities
-- `getCountries(): Promise<Country[]>` - Get all supported foreign countries
+- `getForeignCountries(): Promise<Country[]>` - Get all supported foreign countries
 - `getCountryCode(countryCode: string): Promise<string>` - Get country code from ISO Alpha2 country code
 - `decodeYear(yearCode: string): number` - Decode the year from a fiscal code
 - `decodeMonth(monthCode: string): number` - Decode the month from a fiscal code
