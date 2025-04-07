@@ -3,11 +3,11 @@ import { isForeignPerson, isItalianPerson, validatePerson } from './types.ts';
 
 /**
  * Gets municipality information by code
- * @param {string} code - The cadastral code to lookup
- * @returns {Promise<Municipality>} Municipality data
+ * @param code - The cadastral code to lookup
+ * @returns Municipality data
  * @example
  * await getMunicipalityByCode("H501"); // Returns ["H501", "ROMA", "RM"]
- * @throws {Error} If the municipality code is invalid
+ * @throws If the municipality code is invalid
  */
 export async function getMunicipalityByCode(
   code: string
@@ -29,8 +29,8 @@ export async function getMunicipalityByCode(
 
 /**
  * Normalize a string by removing spaces, accents and special characters
- * @param {string} str - The string to normalize
- * @returns {string} Normalized string in uppercase without spaces or accents
+ * @param str - The string to normalize
+ * @returns Normalized string in uppercase without spaces or accents
  * @example
  * normalizeString("D'Août-Martin"); // Returns "DAOUTMARTIN"
  */
@@ -79,8 +79,8 @@ export function normalizeString(str: string): string {
 
 /**
  * Helper function to extract consonants from a string
- * @param {string} str - The string to extract consonants from
- * @returns {string} A string containing only the consonants
+ * @param str - The string to extract consonants from
+ * @returns A string containing only the consonants
  * @example
  * extractConsonants("Hello"); // Returns "HLL"
  */
@@ -91,8 +91,8 @@ export function extractConsonants(str: string): string {
 
 /**
  * Helper function to extract vowels from a string
- * @param {string} str - The string to extract vowels from
- * @returns {string} A string containing only the vowels
+ * @param str - The string to extract vowels from
+ * @returns A string containing only the vowels
  * @example
  * extractVowels("Hello"); // Returns "EO"
  */
@@ -103,8 +103,8 @@ export function extractVowels(str: string): string {
 
 /**
  * Calculate the three letters code for a last name according to fiscal code rules
- * @param {string} lastName - The last name to encode
- * @returns {string} Three-letter code representing the last name
+ * @param lastName - The last name to encode
+ * @returns Three-letter code representing the last name
  * @example
  * calculateLastNameCode("Rossi"); // Returns "RSS"
  * calculateLastNameCode("Bo"); // Returns "BOX"
@@ -138,8 +138,8 @@ export function calculateLastNameCode(lastName: string): string {
 
 /**
  * Calculate the three letters code for a first name according to fiscal code rules
- * @param {string} firstName - The first name to encode
- * @returns {string} Three-letter code representing the first name
+ * @param firstName - The first name to encode
+ * @returns Three-letter code representing the first name
  * @example
  * calculateFirstNameCode("Mario"); // Returns "MRA"
  * calculateFirstNameCode("Luca"); // Returns "LCU"
@@ -180,8 +180,8 @@ export function calculateFirstNameCode(firstName: string): string {
 
 /**
  * Calculate the two-digit year code from a date
- * @param {Date} date - The date to extract the year from
- * @returns {string} Two-digit year code (last two digits of the year)
+ * @param date - The date to extract the year from
+ * @returns Two-digit year code (last two digits of the year)
  * @example
  * calculateYearCode(new Date(1990, 0, 1)); // Returns "90"
  */
@@ -193,8 +193,8 @@ export function calculateYearCode(date: Date): string {
 
 /**
  * Calculate the letter code for the month according to fiscal code rules
- * @param {Date} date - The date to extract the month from
- * @returns {string} Single letter representing the month
+ * @param date - The date to extract the month from
+ * @returns Single letter representing the month
  * @example
  * calculateMonthCode(new Date(1990, 0, 1)); // Returns "A" (for January)
  */
@@ -220,9 +220,9 @@ export function calculateMonthCode(date: Date): string {
 
 /**
  * Calculate the day and gender code according to fiscal code rules
- * @param {Date} date - The date to extract the day from
- * @param {'M'|'F'} gender - The gender ('M' for male, 'F' for female)
- * @returns {string} Two-digit code representing day and gender (for females, 40 is added to the day)
+ * @param date - The date to extract the day from
+ * @param gender - The gender ('M' for male, 'F' for female)
+ * @returns Two-digit code representing day and gender (for females, 40 is added to the day)
  * @example
  * calculateDayGenderCode(new Date(1990, 0, 15), 'M'); // Returns "15"
  * calculateDayGenderCode(new Date(1990, 0, 15), 'F'); // Returns "55"
@@ -239,12 +239,12 @@ export function calculateDayGenderCode(date: Date, gender: 'M' | 'F'): string {
 
 /**
  * Get cadastral code from place name or cadastral code
- * @param {string} place - The name of the municipality or its cadastral code
- * @returns {Promise<string>} The cadastral code for the municipality
+ * @param place - The name of the municipality or its cadastral code
+ * @returns The cadastral code for the municipality
  * @example
  * await getMunicipalCodeFromPlace("ROMA"); // Returns "H501"
  * await getMunicipalCodeFromPlace("H501"); // Returns "H501"
- * @throws {Error} If the place is not found
+ * @throws If the place is not found
  */
 export async function getMunicipalCodeFromPlace(
   place: string
@@ -276,11 +276,11 @@ export async function getMunicipalCodeFromPlace(
 
 /**
  * Get the country code from ISO Alpha2 country code
- * @param {string} countryCode - The ISO Alpha2 country code (e.g., "US", "FR")
- * @returns {Promise<string>} The cadastral code for the country (Z followed by three digits)
+ * @param countryCode - The ISO Alpha2 country code (e.g., "US", "FR")
+ * @returns The cadastral code for the country (Z followed by three digits)
  * @example
  * await getCountryCode("US"); // Returns "Z404"
- * @throws {Error} If the country code is invalid
+ * @throws If the country code is invalid
  */
 export async function getCountryCode(countryCode: string): Promise<string> {
   // Dynamically import countries data
@@ -296,8 +296,8 @@ export async function getCountryCode(countryCode: string): Promise<string> {
 
 /**
  * Calculate the check character (last character) of the fiscal code
- * @param {string} code - The first 15 characters of the fiscal code
- * @returns {string} The check character
+ * @param code - The first 15 characters of the fiscal code
+ * @returns The check character
  * @example
  * calculateCheckCharacter("RSSMRA90A15H501"); // Returns a check character like "X"
  */
@@ -406,8 +406,8 @@ export function calculateCheckCharacter(code: string): string {
 
 /**
  * Decode the birth year from the fiscal code's year component
- * @param {string} yearCode - Two-digit year code from the fiscal code
- * @returns {number} Full year (4 digits)
+ * @param yearCode - Two-digit year code from the fiscal code
+ * @returns Full year (4 digits)
  * @example
  * decodeYear("90"); // Returns 1990 (or could be 2090 depending on current year)
  */
@@ -425,8 +425,8 @@ export function decodeYear(yearCode: string): number {
 
 /**
  * Decode the birth month from the fiscal code's month component
- * @param {string} monthCode - One letter month code from the fiscal code
- * @returns {number} Month number (1-12)
+ * @param monthCode - One letter month code from the fiscal code
+ * @returns Month number (1-12)
  * @example
  * decodeMonth("A"); // Returns 1 (January)
  */
@@ -451,8 +451,8 @@ export function decodeMonth(monthCode: string): number {
 
 /**
  * Decode the birth day from the fiscal code's day component
- * @param {number} dayCode - Two-digit day code from the fiscal code
- * @returns {number} Day of month (1-31)
+ * @param dayCode - Two-digit day code from the fiscal code
+ * @returns Day of month (1-31)
  * @example
  * decodeDay(15); // Returns 15
  * decodeDay(55); // Returns 15 (for females)
@@ -464,17 +464,17 @@ export function decodeDay(dayCode: number): number {
 
 /**
  * Calculate the complete fiscal code for a person
- * @param {Person} person - Object containing person's data
- * @returns {Promise<string>} The complete 16-character fiscal code
+ * @param person - Object containing person's data
+ * @returns The complete 16-character fiscal code
  * @example
- * await calculateFiscalCode({
+ * await calculateFiscalCode(\{
  *   firstName: "Mario",
  *   lastName: "Rossi",
  *   gender: "M",
  *   birthDate: new Date(1990, 0, 15),
  *   birthPlace: "ROMA"
- * }); // Returns something like "RSSMRA90A15H501X"
- * @throws {Error} If the person data is invalid
+ * \}); // Returns something like "RSSMRA90A15H501X"
+ * @throws If the person data is invalid
  */
 export async function calculateFiscalCode(person: Person): Promise<string> {
   // Validate person object
@@ -508,8 +508,8 @@ export async function calculateFiscalCode(person: Person): Promise<string> {
 
 /**
  * Validates if a string is a valid fiscal code
- * @param {string} fiscalCode - The fiscal code to validate
- * @returns {boolean} True if the fiscal code is valid, false otherwise
+ * @param fiscalCode - The fiscal code to validate
+ * @returns True if the fiscal code is valid, false otherwise
  * @example
  * isValidFiscalCode("RSSMRA90A15H501X"); // Returns true if valid
  * isValidFiscalCode("INVALID"); // Returns false
@@ -539,17 +539,17 @@ export function isValidFiscalCode(fiscalCode: string): boolean {
 
 /**
  * Decode a fiscal code to extract available information
- * @param {string} fiscalCode - The fiscal code to decode
- * @returns {Promise<FiscalCodeData>} Object containing decoded information (birth date, gender, place)
+ * @param fiscalCode - The fiscal code to decode
+ * @returns Object containing decoded information (birth date, gender, place)
  * @example
  * await decodeFiscalCode("RSSMRA90A15H501X");
- * // Returns {
+ * // Returns \{
  * //   birthDate: new Date(1990, 0, 15),
  * //   gender: "M",
  * //   birthPlace: "ROMA",
  * //   birthProvince: "RM"
- * // }
- * @throws {Error} If the fiscal code is invalid
+ * // \}
+ * @throws If the fiscal code is invalid
  */
 export async function decodeFiscalCode(
   fiscalCode: string
