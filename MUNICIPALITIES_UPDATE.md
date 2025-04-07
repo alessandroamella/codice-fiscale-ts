@@ -10,7 +10,7 @@ Italian municipalities data is periodically fetched from an official source to e
 
 1. A scheduled GitHub Actions workflow runs every Monday at 3 AM UTC
 2. The workflow executes the `update-municipalities.ts` script which:
-   - Fetches municipalities data from the ISTAT API (`https://situas-servizi.istat.it/publish/reportspooljson?pfun=61&pdata=01/01/1948`)
+   - Fetches municipalities data from the [comuni-json](https://github.com/matteocontrini/comuni-json) repository and the ISTAT API (`https://situas-servizi.istat.it/publish/reportspooljson?pfun=61&pdata=01/01/1948`)
    - Compares it with the current data in `src/data/municipalities.ts`
    - Updates the file if changes are detected
 3. If changes are found, a commit is created with a semantic-release compatible message (`feat: update municipalities data`)
