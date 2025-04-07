@@ -12,9 +12,9 @@ export {
 	decodeYear,
 	extractConsonants,
 	extractVowels,
-	findBirthPlaceByCode,
 	getCountryCode,
 	getMunicipalCodeFromPlace,
+	getMunicipalityByCode,
 	isValidFiscalCode,
 	normalizeString
 } from './codiceFiscale.ts';

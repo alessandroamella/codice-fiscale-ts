@@ -98,7 +98,7 @@ console.log(decodedData);
 - `validatePerson(person: Person): void` - Validate that a person object has all required fields
 - `isItalianPerson(person: Person): boolean` - Check if a person was born in Italy
 - `isForeignPerson(person: Person): boolean` - Check if a person was born abroad
-- `findBirthPlaceByCode(code: string): Promise<{name: string, province: string} | undefined>` - Find birth place by cadastral code
+- `getMunicipalityByCode(code: string): Promise<Municipality>` - Get municipality by cadastral code
 - `getMunicipalCodeFromPlace(place: string): Promise<string>` - Get cadastral code from place name
 - `getMunicipalities(): Promise<Municipality[]>` - Get all Italian municipalities
 - `getForeignCountries(): Promise<Country[]>` - Get all supported foreign countries
