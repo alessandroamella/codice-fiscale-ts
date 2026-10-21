@@ -5,31 +5,34 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./build/index.d.ts",
-      "import": "./build/index.mjs",
-      "require": "./build/index.cjs"
-    }
+      "import": {
+        "types": "./build/index.d.ts",
+        "default": "./build/index.mjs"
+      },
+      "require": {
+        "types": "./build/index.d.cts",
+        "default": "./build/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "main": "./build/index.cjs",
   "module": "./build/index.mjs",
   "types": "./build/index.d.ts",
+  "files": [
+    "build"
+  ],
+  "sideEffects": false,
   "license": "MIT",
-  "engines": {
-    "node": "^22.14.0",
-    "npm": "^10.9.2"
-  },
-  "volta": {
-    "node": "22.14.0",
-    "npm": "10.9.2"
-  },
-  "publishConfig": {
-    "access": "public"
+  "author": "Alessandro Amella",
+  "homepage": "https://github.com/alessandroamella/codice-fiscale-ts#readme",
+  "bugs": {
+    "url": "https://github.com/alessandroamella/codice-fiscale-ts/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/alessandroamella/codice-fiscale-ts.git"
+    "url": "git+https://github.com/alessandroamella/codice-fiscale-ts.git"
   },
-  "author": "Alessandro Amella",
   "keywords": [
     "codice-fiscale",
     "fiscal-code",
@@ -38,40 +41,55 @@
     "typescript",
     "validation"
   ],
+  "engines": {
+    "node": ">=18"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=24.10.0",
+      "onFail": "warn"
+    }
+  },
+  "packageManager": "pnpm@12.3.4",
+  "volta": {
+    "node": "24.19.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "node --disable-warning=ExperimentalWarning --experimental-strip-types  ./scripts/build.ts",
     "clean": "rimraf build coverage",
     "type:check": "tsc --noEmit",
-    "lint": "biome lint --error-on-warnings ./src",
+    "lint": "biome check --error-on-warnings ./src ./scripts",
     "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/test.ts test",
     "test:watch": "node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/test.ts test:watch",
     "test:coverage": "node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/test.ts test:coverage",
     "update-municipalities": "node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/update-municipalities.ts",
     "commit-municipalities-update": "node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/commit-municipalities-update.ts",
-    "update-and-commit": "npm run update-municipalities && npm run commit-municipalities-update",
+    "update-and-commit": "pnpm run update-municipalities && pnpm run commit-municipalities-update",
     "cz": "cz",
     "semantic-release": "semantic-release",
     "prepare": "husky"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
-    "@microsoft/api-extractor": "^7.52.2",
+    "@biomejs/biome": "2.5.15",
+    "@microsoft/api-extractor": "^7.59.4",
     "@ryansonshine/commitizen": "^4.2.8",
     "@ryansonshine/cz-conventional-changelog": "^3.3.4",
-    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/changelog": "^7.0.0",
     "@semantic-release/commit-analyzer": "^13.0.1",
-    "@semantic-release/github": "^11.0.1",
-    "@semantic-release/npm": "^12.0.1",
-    "@semantic-release/release-notes-generator": "^14.0.3",
-    "@types/node": "^22.14.0",
-    "@types/prompts": "^2.4.9",
-    "c8": "^10.1.3",
-    "esbuild": "^0.24.2",
-    "globals": "^16.0.0",
+    "@semantic-release/github": "^12.0.10",
+    "@semantic-release/npm": "^13.2.0",
+    "@semantic-release/release-notes-generator": "^14.1.1",
+    "@types/node": "^24.19.2",
+    "c8": "^12.0.0",
+    "esbuild": "^0.28.2",
     "husky": "^9.1.7",
-    "is-main": "^0.4.0",
-    "rimraf": "^6.0.1",
-    "semantic-release": "^24.2.3",
-    "typescript": "^5.8.2"
+    "rimraf": "^6.1.3",
+    "semantic-release": "^25.0.9",
+    "typescript": "~5.9.3"
   }
 }
