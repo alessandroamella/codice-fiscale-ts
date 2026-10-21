@@ -12,6 +12,9 @@ on:
     branches:
       - main
       - master
+  # Dispatched by update-municipalities.yml after pushing new data, so that
+  # every release goes through this workflow (the npm trusted publisher)
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -20,66 +23,40 @@ permissions:
   id-token: write # npm trusted publishing (OIDC) + provenance
 
 jobs:
-  lint:
-    name: 🔬 Lint
+  check:
+    name: 🔬 Lint, typecheck & test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: package.json
-      - uses: pnpm/action-setup@v4
-        with:
-          run_install: true
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
       - name: 🔬 Lint
-        run: pnpm run lint
-
-  type-check:
-    name: ʦ Typecheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: package.json
-      - uses: pnpm/action-setup@v4
-        with:
-          run_install: true
+        run: bun run lint
       - name: ʦ Typecheck
-        run: pnpm run type:check
-
-  test:
-    name: ⚡ Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: package.json
-      - uses: pnpm/action-setup@v4
-        with:
-          run_install: true
+        run: bun run type:check
       - name: ⚡ Tests
-        run: pnpm run test:coverage
+        run: bun run test:coverage
+      - name: 🔨 Build
+        run: bun run build
 
-  build-and-release:
+  release:
     name: 🚀 Build & release
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/next' || github.ref == 'refs/heads/beta' || github.ref == 'refs/heads/alpha')
-    needs: [lint, type-check, test]
+    if: github.event_name != 'pull_request'
+    needs: [check]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+      # semantic-release and npm (for trusted publishing) run on Node
       - uses: actions/setup-node@v5
         with:
-          node-version-file: package.json
-      - uses: pnpm/action-setup@v4
-        with:
-          run_install: true
+          node-version: 24
+      - run: bun install --frozen-lockfile
       - name: 🔨 Build
-        run: pnpm run build
+        run: bun run build
       - name: 🚀 Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm run semantic-release
+        run: bun run semantic-release

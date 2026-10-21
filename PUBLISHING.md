@@ -17,24 +17,18 @@ This package uses [semantic-release](https://github.com/semantic-release/semanti
 
 ## Required Setup
 
-To enable automated publishing, you need to set up the following GitHub repository secrets:
+Publishing uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers) (OIDC): no npm token is stored in the repository, and every release gets a provenance attestation.
 
-1. **NPM_TOKEN**: An npm access token with publish permissions
-   - Log in to your npm account at https://www.npmjs.com/
-   - Go to your profile settings
-   - Select "Access Tokens"
-   - Create a new token with "Automation" type
-   - Set the appropriate permissions (make sure "publish" is enabled)
-   - Copy the token and add it as a secret in your GitHub repository
+To configure it (one time only):
 
-To add the secret to your GitHub repository:
+1. Log in to https://www.npmjs.com/ and open the `codice-fiscale-ts` package settings
+2. Under "Trusted Publisher", choose **GitHub Actions** and fill in:
+   - Organization or user: `alessandroamella`
+   - Repository: `codice-fiscale-ts`
+   - Workflow filename: `codice-fiscale-ts.yml`
+3. Optionally, under "Publishing access", require 2FA and disallow tokens
 
-1. Go to your GitHub repository
-2. Click on "Settings"
-3. Go to "Secrets and variables" > "Actions"
-4. Click "New repository secret"
-5. Name it `NPM_TOKEN` and paste your npm token as the value
-6. Click "Add secret"
+The weekly municipalities update doesn't publish by itself: after pushing new data it dispatches `codice-fiscale-ts.yml`, so that workflow is the only one that needs to be trusted. The workflows already request the `id-token: write` permission needed for OIDC. `GITHUB_TOKEN` is provided automatically by GitHub Actions.
 
 ## Commit Message Format
 
@@ -62,24 +56,13 @@ Examples:
 
 ## Manual Publishing (if needed)
 
-If you need to trigger a manual release:
-
-1. Clone the repository
-2. Set up the required environment variables:
-   ```bash
-   export NPM_TOKEN=your_npm_token
-   export GITHUB_TOKEN=your_github_token
-   ```
-3. Run the release process:
-   ```bash
-   npm run semantic-release
-   ```
+Releases are meant to go through GitHub Actions (trusted publishing and provenance only work there). To re-run a release, re-run the failed workflow from the Actions tab, or push a new commit.
 
 ## Troubleshooting
 
 If the automated release fails:
 
 1. Check the GitHub Actions logs for errors
-2. Verify that your NPM_TOKEN is valid and has publish permissions
+2. Verify that the trusted publisher on npmjs.com matches the repository and workflow filename
 3. Ensure your commit messages follow the Conventional Commits format
 4. If necessary, you can manually trigger a new workflow run by pushing a new commit

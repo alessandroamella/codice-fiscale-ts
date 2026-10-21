@@ -31,15 +31,9 @@ You can manually trigger the update process by:
 You can also run the update process locally:
 
 ```bash
-# Using npm scripts
-npm run update-municipalities # Only update the data file
-npm run commit-municipalities-update # Only commit changes if they exist
-npm run update-and-commit # Update data and commit in one step
-
-# or with pnpm
-pnpm update-municipalities
-pnpm commit-municipalities-update
-pnpm update-and-commit
+bun run update-municipalities # Only update the data file
+bun run commit-municipalities-update # Only commit changes if they exist
+bun run update-and-commit # Update data and commit in one step
 ```
 
 ## Data Source
