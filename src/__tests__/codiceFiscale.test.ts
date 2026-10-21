@@ -15,6 +15,7 @@ import {
   isForeignPerson,
   isItalianPerson,
   isValidFiscalCode,
+  normalizeOmocodia,
   normalizeString,
   validatePerson
 } from '../index.ts';
@@ -46,6 +47,11 @@ await describe('Codice Fiscale Functions', async () => {
 
     await it('replaces accented characters', async () => {
       equal(normalizeString('mArìò Rössì'), 'MARIOROSSI');
+    });
+
+    await it('strips apostrophes and hyphens (composite surnames)', async () => {
+      equal(normalizeString("D'Août-Martin"), 'DAOUTMARTIN');
+      equal(normalizeString("dell'Orto"), 'DELLORTO');
     });
   });
 
@@ -156,6 +162,53 @@ await describe('Codice Fiscale Functions', async () => {
       equal(isValidFiscalCode('INVALID'), false);
       equal(isValidFiscalCode('RSSMRA80A01H501X'), false); // Wrong check character
       equal(isValidFiscalCode('RSSMRA80A01H501'), false); // Too short
+    });
+
+    await it('rejects structurally impossible but check-passing codes', async () => {
+      // 'O' is not a valid month letter; build a code that nonetheless carries
+      // the correct check character so only the semantic check can reject it.
+      const badMonth = `RSSMRA80O01H501${calculateCheckCharacter('RSSMRA80O01H501')}`;
+      equal(isValidFiscalCode(badMonth), false);
+
+      // Day 00 is impossible.
+      const badDay = `RSSMRA80A00H501${calculateCheckCharacter('RSSMRA80A00H501')}`;
+      equal(isValidFiscalCode(badDay), false);
+    });
+  });
+
+  await describe('omocodia', async () => {
+    // Mario Rossi, 1 Jan 1980, Roma (M) -> RSSMRA80A01H501U
+    const base = 'RSSMRA80A01H501';
+
+    await it('normalizeOmocodia reverts substituted letters to digits', async () => {
+      // Substitute the rightmost numeric char (place digit '1' -> 'M').
+      equal(normalizeOmocodia('RSSMRA80A01H50M'), base);
+      // A code with no substitutions is unchanged.
+      equal(normalizeOmocodia(base), base);
+    });
+
+    await it('validates a first-level omocode', async () => {
+      const omoBase = 'RSSMRA80A01H50M'; // last place digit substituted
+      const omocode = omoBase + calculateCheckCharacter(omoBase);
+      equal(isValidFiscalCode(omocode), true);
+    });
+
+    await it('decodes an omocode to the same data as the canonical code', async () => {
+      const canonical = base + calculateCheckCharacter(base);
+      const omoBase = 'RSSMRA80A01H50M';
+      const omocode = omoBase + calculateCheckCharacter(omoBase);
+
+      const a = await decodeFiscalCode(canonical);
+      const b = await decodeFiscalCode(omocode);
+      equal(b.birthDate!.getTime(), a.birthDate!.getTime());
+      equal(b.gender, a.gender);
+      equal(b.birthPlace, a.birthPlace);
+    });
+
+    await it('rejects a non-omocodia letter in a numeric slot', async () => {
+      // 'A' is not a valid omocodia substitution letter.
+      const broken = 'RSSMRA80A01H50A';
+      equal(isValidFiscalCode(broken + calculateCheckCharacter(broken)), false);
     });
   });
 

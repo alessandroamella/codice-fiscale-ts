@@ -7,6 +7,8 @@ export interface BasePerson {
 
 export interface ItalianPerson extends BasePerson {
   birthPlace: string;
+  /** Optional province (e.g. "RM") to disambiguate homonymous municipalities. */
+  birthProvince?: string;
   foreignCountry?: 'IT' | undefined;
 }
 
