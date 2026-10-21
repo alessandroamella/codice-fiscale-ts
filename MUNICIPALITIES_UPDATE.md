@@ -13,7 +13,7 @@ Italian municipalities data is periodically fetched from an official source to e
    - Fetches the current municipalities from the ISTAT API (`https://situas-servizi.istat.it/publish/reportspooljson?pfun=61&pdata=<today>`), including bilingual names
    - Fetches the [ANPR archive](https://www.anagrafenazionale.interno.it/wp-content/uploads/ANPR_archivio_comuni.csv) of every municipality that ever existed (with the [GitHub copy](https://github.com/italia/anpr/blob/master/src/archivi/ANPR_archivio_comuni.csv) as a fallback), and keeps the names no longer in use: suppressed municipalities and former names of current ones
    - Regenerates `src/data/municipalities.ts` and `src/data/historicalMunicipalities.ts`, and exits with code 1 if either changed
-3. If changes are found, the tests run and a commit is created with a semantic-release compatible message (`feat: update municipalities data`)
+3. If changes are found, the tests run and a commit is created with a semantic-release compatible message (`fix(data): update municipalities data`)
 4. The changes are pushed to the repository
 5. The workflow dispatches the main `codice-fiscale-ts.yml` workflow, which checks, builds and releases the new version
 
@@ -44,9 +44,9 @@ The script handles municipalities with special characters (including apostrophes
 
 ## Automatic Release
 
-When municipalities data is updated through the GitHub workflow, the commit message follows semantic-release conventions (`feat: update municipalities data`). This triggers the semantic-release process to:
+When municipalities data is updated through the GitHub workflow, the commit message follows semantic-release conventions (`fix(data): update municipalities data`). This triggers the semantic-release process to:
 
-1. Create a new minor version (since it's a feature commit)
+1. Create a new patch version (since it's a `fix` commit)
 2. Generate release notes
 3. Publish the new version to npm
 4. Create a GitHub release
