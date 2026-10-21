@@ -2,7 +2,7 @@
 
 A TypeScript library for calculating, validating, and decoding Italian fiscal codes (codice fiscale).
 
-There's an introduction in Italian on [my blog](https://blog.bitrey.dev/codice-fiscale-ts), and a [live demo](https://cf.bitrey.it).
+Try it in the [live demo](https://cf.bitrey.it).
 
 ## Why another library?
 

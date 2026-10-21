@@ -60,7 +60,7 @@ async function commitChanges(): Promise<void> {
   const commitResult = await runCommand('git', [
     'commit',
     '-m',
-    'feat: update municipalities data',
+    'fix(data): update municipalities data',
     '-m',
     'This commit updates the municipalities data from the official source.'
   ]);
