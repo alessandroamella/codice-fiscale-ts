@@ -1,40 +1,41 @@
 export {
-	calculateCheckCharacter,
-	calculateDayGenderCode,
-	calculateFirstNameCode,
-	calculateFiscalCode,
-	calculateLastNameCode,
-	calculateMonthCode,
-	calculateYearCode,
-	decodeDay,
-	decodeFiscalCode,
-	decodeMonth,
-	decodeYear,
-	extractConsonants,
-	extractVowels,
-	getCountryCode,
-	getMunicipalCodeFromPlace,
-	getMunicipalityByCode,
-	isValidFiscalCode,
-	normalizeString
+  calculateCheckCharacter,
+  calculateDayGenderCode,
+  calculateFirstNameCode,
+  calculateFiscalCode,
+  calculateLastNameCode,
+  calculateMonthCode,
+  calculateYearCode,
+  decodeDay,
+  decodeFiscalCode,
+  decodeMonth,
+  decodeYear,
+  extractConsonants,
+  extractVowels,
+  getCountryCode,
+  getMunicipalCodeFromPlace,
+  getMunicipalityByCode,
+  isValidFiscalCode,
+  normalizeOmocodia,
+  normalizeString
 } from './codiceFiscale.ts';
 
 export type {
-	BasePerson,
-	BilingualMunicipality,
-	Country,
-	FiscalCodeData,
-	ForeignPerson,
-	ItalianMunicipality,
-	ItalianPerson,
-	Municipality,
-	Person
+  BasePerson,
+  BilingualMunicipality,
+  Country,
+  FiscalCodeData,
+  ForeignPerson,
+  ItalianMunicipality,
+  ItalianPerson,
+  Municipality,
+  Person
 } from './types.ts';
 
 export {
-	isForeignPerson,
-	isItalianPerson,
-	validatePerson
+  isForeignPerson,
+  isItalianPerson,
+  validatePerson
 } from './types.ts';
 
 import type { Country, Municipality } from './types.ts';
@@ -51,8 +52,8 @@ import type { Country, Municipality } from './types.ts';
  * ```
  */
 export async function getMunicipalities(): Promise<Municipality[]> {
-	const { municipalities } = await import('./data/municipalities.ts');
-	return municipalities;
+  const { municipalities } = await import('./data/municipalities.ts');
+  return municipalities;
 }
 
 /**
@@ -65,6 +66,6 @@ export async function getMunicipalities(): Promise<Municipality[]> {
  * ```
  */
 export async function getForeignCountries(): Promise<Country[]> {
-	const { countries } = await import('./data/countries.ts');
-	return countries;
+  const { countries } = await import('./data/countries.ts');
+  return countries;
 }

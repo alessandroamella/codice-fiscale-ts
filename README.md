@@ -28,6 +28,8 @@ npm install codice-fiscale-ts
 yarn add codice-fiscale-ts
 # or
 pnpm add codice-fiscale-ts
+# or
+bun add codice-fiscale-ts
 ```
 
 ## Usage

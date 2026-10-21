@@ -14,67 +14,38 @@ export async function getMunicipalityByCode(
 ): Promise<Municipality> {
   // Dynamically import municipalities data
   const { municipalities } = await import('./data/municipalities.ts');
-  
+
   // Find municipality by code
   const municipality = municipalities.find(
     ([cadastralCode]) => cadastralCode === code
   );
-  
+
   if (!municipality) {
     throw new Error(`Invalid municipality code: ${code}`);
   }
-  
+
   return municipality;
 }
 
 /**
  * Normalize a string by removing spaces, accents and special characters
  * @param str - The string to normalize
- * @returns Normalized string in uppercase without spaces or accents
+ * @returns Normalized uppercase string containing only the letters A-Z
  * @example
  * normalizeString("D'Août-Martin"); // Returns "DAOUTMARTIN"
  */
 export function normalizeString(str: string): string {
-  // Convert to uppercase
-  str = str.toUpperCase();
-
-  // Remove spaces
-  str = str.replace(/\s/g, '');
-
-  // Replace accented characters
-  const accentMap: { [key: string]: string } = {
-    À: 'A',
-    Á: 'A',
-    Â: 'A',
-    Ã: 'A',
-    Ä: 'A',
-    Å: 'A',
-    È: 'E',
-    É: 'E',
-    Ê: 'E',
-    Ë: 'E',
-    Ì: 'I',
-    Í: 'I',
-    Î: 'I',
-    Ï: 'I',
-    Ò: 'O',
-    Ó: 'O',
-    Ô: 'O',
-    Õ: 'O',
-    Ö: 'O',
-    Ù: 'U',
-    Ú: 'U',
-    Û: 'U',
-    Ü: 'U',
-    Ñ: 'N',
-    Ç: 'C'
-  };
-
-  for (const [accented, normal] of Object.entries(accentMap)) {
-    str = str.replace(new RegExp(accented, 'g'), normal);
-  }
-
-  return str;
+  return (
+    str
+      .toUpperCase()
+      // Decompose accented characters into base letter + combining mark...
+      .normalize('NFD')
+      // ...then strip the combining marks (covers every Latin accent generically)
+      .replace(/\p{M}/gu, '')
+      // Drop anything that is not a plain A-Z letter (spaces, apostrophes,
+      // hyphens) so composite surnames are treated as a single word.
+      .replace(/[^A-Z]/g, '')
+  );
 }
 
 /**
@@ -200,22 +171,84 @@ export function calculateYearCode(date: Date): string {
  */
 export function calculateMonthCode(date: Date): string {
   const month = date.getMonth() + 1; // January is 0
-  const lettersForMonth: { [key: number]: string } = {
-    1: 'A', // January
-    2: 'B', // February
-    3: 'C', // March
-    4: 'D', // April
-    5: 'E', // May
-    6: 'H', // June
-    7: 'L', // July
-    8: 'M', // August
-    9: 'P', // September
-    10: 'R', // October
-    11: 'S', // November
-    12: 'T' // December
-  };
+  return MONTH_NUMBER_TO_LETTER[month]!;
+}
 
-  return lettersForMonth[month]!;
+/** Month number (1-12) -> fiscal code letter. */
+const MONTH_NUMBER_TO_LETTER: { [key: number]: string } = {
+  1: 'A', // January
+  2: 'B', // February
+  3: 'C', // March
+  4: 'D', // April
+  5: 'E', // May
+  6: 'H', // June
+  7: 'L', // July
+  8: 'M', // August
+  9: 'P', // September
+  10: 'R', // October
+  11: 'S', // November
+  12: 'T' // December
+};
+
+/** Fiscal code letter -> month number (1-12). */
+const MONTH_LETTER_TO_NUMBER: { [key: string]: number } = {
+  A: 1,
+  B: 2,
+  C: 3,
+  D: 4,
+  E: 5,
+  H: 6,
+  L: 7,
+  M: 8,
+  P: 9,
+  R: 10,
+  S: 11,
+  T: 12
+};
+
+/**
+ * Omocodia substitution map (DM 23/12/1976, art. 6): when two people would
+ * otherwise share a fiscal code, the numeric characters are replaced from the
+ * rightmost, one at a time, with the corresponding letter below.
+ * @see https://it.wikipedia.org/wiki/Omocodia
+ */
+const OMOCODIA_LETTER_TO_DIGIT: { [key: string]: string } = {
+  L: '0',
+  M: '1',
+  N: '2',
+  P: '3',
+  Q: '4',
+  R: '5',
+  S: '6',
+  T: '7',
+  U: '8',
+  V: '9'
+};
+
+/**
+ * Indices (0-based) of the seven numeric characters in the 15-char base code
+ * that may be substituted by letters in case of omocodia: the two year digits,
+ * the two day digits and the three place-code digits.
+ */
+const OMOCODIA_POSITIONS = [6, 7, 9, 10, 12, 13, 14];
+
+/**
+ * Restore the canonical (all-numeric) form of a fiscal code by reverting any
+ * omocodia letter substitutions back to their original digits.
+ * @param fiscalCode - A fiscal code, possibly carrying omocodia substitutions
+ * @returns The fiscal code with numeric positions normalized back to digits
+ * @example
+ * normalizeOmocodia("RSSMRA80A01H50MX"); // Returns "RSSMRA80A01H501X"
+ */
+export function normalizeOmocodia(fiscalCode: string): string {
+  const chars = fiscalCode.toUpperCase().split('');
+  for (const pos of OMOCODIA_POSITIONS) {
+    const replacement = OMOCODIA_LETTER_TO_DIGIT[chars[pos]!];
+    if (replacement) {
+      chars[pos] = replacement;
+    }
+  }
+  return chars.join('');
 }
 
 /**
@@ -239,39 +272,59 @@ export function calculateDayGenderCode(date: Date, gender: 'M' | 'F'): string {
 
 /**
  * Get cadastral code from place name or cadastral code
- * @param place - The name of the municipality or its cadastral code
+ * @param place - The name of the municipality or its cadastral code. For
+ * bilingual municipalities either language variant is accepted.
+ * @param province - Optional province (e.g. "BZ") used to disambiguate when
+ * several municipalities share the same name
  * @returns The cadastral code for the municipality
  * @example
  * await getMunicipalCodeFromPlace("ROMA"); // Returns "H501"
  * await getMunicipalCodeFromPlace("H501"); // Returns "H501"
+ * await getMunicipalCodeFromPlace("Peglio", "PU"); // Disambiguates by province
  * @throws If the place is not found
  */
 export async function getMunicipalCodeFromPlace(
-  place: string
+  place: string,
+  province?: string
 ): Promise<string> {
   // Dynamically import municipalities data
   const { municipalities } = await import('./data/municipalities.ts');
-  const normalizedPlace = normalizeString(place.toUpperCase());
-  
+  const normalizedPlace = normalizeString(place);
+
   // If the place is exactly 4 characters, it might be a cadastral code itself
-  if (normalizedPlace.length === 4) {
+  if (place.trim().length === 4) {
     // Check if it exists as a cadastral code directly
     const municipalityByCode = municipalities.find(
-      ([cadastralCode]) => cadastralCode === normalizedPlace
+      ([cadastralCode]) => cadastralCode === place.trim().toUpperCase()
     );
     if (municipalityByCode) {
       return municipalityByCode[0];
     }
   }
-  
-  // Otherwise search by name as before
-  const municipality = municipalities.find(
-    ([, name]) => normalizeString(name.toUpperCase()) === normalizedPlace
+
+  // Match by any name variant (Italian name, plus both names if bilingual).
+  const matches = municipalities.filter((municipality) =>
+    municipality
+      .slice(1)
+      .filter((_, index) => index !== 1) // skip the province column
+      .some((name) => normalizeString(name) === normalizedPlace)
   );
-  if (!municipality) {
+
+  if (matches.length === 0) {
     throw new Error(`Invalid birth place: ${place}`);
   }
-  return municipality[0];
+
+  // When the name is ambiguous, prefer the requested province if provided.
+  if (province) {
+    const byProvince = matches.find(
+      ([, , prov]) => prov.toUpperCase() === province.toUpperCase()
+    );
+    if (byProvince) {
+      return byProvince[0];
+    }
+  }
+
+  return matches[0]![0];
 }
 
 /**
@@ -411,13 +464,17 @@ export function calculateCheckCharacter(code: string): string {
  * @example
  * decodeYear("90"); // Returns 1990 (or could be 2090 depending on current year)
  */
-export function decodeYear(yearCode: string): number {
-  const yearNum = Number.parseInt(yearCode);
-  const currentYear = new Date().getFullYear();
-  const century = Math.floor(currentYear / 100) * 100;
+export function decodeYear(
+  yearCode: string,
+  referenceYear: number = new Date().getFullYear()
+): number {
+  const yearNum = Number.parseInt(yearCode, 10);
+  const century = Math.floor(referenceYear / 100) * 100;
 
-  // Determine the century
-  if (yearNum > currentYear % 100) {
+  // A two-digit year is inherently ambiguous (e.g. '07' is both 1907 and
+  // 2007 — see "Omocodia su anni di nascita diversi" on Wikipedia). We assume
+  // the most recent year that is not in the future relative to referenceYear.
+  if (yearNum > referenceYear % 100) {
     return century - 100 + yearNum;
   }
   return century + yearNum;
@@ -431,22 +488,11 @@ export function decodeYear(yearCode: string): number {
  * decodeMonth("A"); // Returns 1 (January)
  */
 export function decodeMonth(monthCode: string): number {
-  const monthMap: { [key: string]: number } = {
-    A: 1,
-    B: 2,
-    C: 3,
-    D: 4,
-    E: 5,
-    H: 6,
-    L: 7,
-    M: 8,
-    P: 9,
-    R: 10,
-    S: 11,
-    T: 12
-  };
-
-  return monthMap[monthCode] || 1;
+  const month = MONTH_LETTER_TO_NUMBER[monthCode.toUpperCase()];
+  if (!month) {
+    throw new Error(`Invalid month code: ${monthCode}`);
+  }
+  return month;
 }
 
 /**
@@ -491,7 +537,10 @@ export async function calculateFiscalCode(person: Person): Promise<string> {
   if (isForeignPerson(person)) {
     placeCode = await getCountryCode(person.foreignCountry);
   } else if (isItalianPerson(person)) {
-    placeCode = await getMunicipalCodeFromPlace(person.birthPlace);
+    placeCode = await getMunicipalCodeFromPlace(
+      person.birthPlace,
+      person.birthProvince
+    );
   } else {
     // This should never happen because validatePerson would throw first
     throw new Error(
@@ -523,18 +572,41 @@ export function isValidFiscalCode(fiscalCode: string): boolean {
     return false;
   }
 
-  // Check format using regex
-  const fiscalCodeRegex = /^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$/;
+  // Structural check: the six name letters and the three single-letter slots
+  // (month, place prefix, check char) must be letters; the seven numeric slots
+  // may hold either a digit or an omocodia letter.
+  const fiscalCodeRegex =
+    /^[A-Z]{6}[A-Z\d]{2}[A-Z][A-Z\d]{2}[A-Z][A-Z\d]{3}[A-Z]$/;
   if (!fiscalCodeRegex.test(fiscalCode)) {
     return false;
   }
 
-  // Check the check character
+  // The check character is computed over the literal code, including any
+  // omocodia letters, so verify it before normalizing them away.
   const baseCode = fiscalCode.substring(0, 15);
-  const checkCharacter = fiscalCode.substring(15, 16);
-  const calculatedCheckCharacter = calculateCheckCharacter(baseCode);
+  if (fiscalCode[15] !== calculateCheckCharacter(baseCode)) {
+    return false;
+  }
 
-  return checkCharacter === calculatedCheckCharacter;
+  // Revert omocodia substitutions and verify the numeric slots are now digits;
+  // this rejects stray letters that are not valid omocodia substitutions.
+  const normalized = normalizeOmocodia(fiscalCode);
+  if (!/^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$/.test(normalized)) {
+    return false;
+  }
+
+  // Semantic checks: the month letter must be one of the twelve valid ones...
+  if (!(normalized[8]! in MONTH_LETTER_TO_NUMBER)) {
+    return false;
+  }
+
+  // ...and the day must be in 01-31 (males) or 41-71 (females).
+  const day = decodeDay(Number.parseInt(normalized.substring(9, 11), 10));
+  if (day < 1 || day > 31) {
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -558,10 +630,13 @@ export async function decodeFiscalCode(
     throw new Error('Invalid fiscal code format');
   }
 
-  const yearCode = fiscalCode.substring(6, 8);
-  const monthCode = fiscalCode.substring(8, 9);
-  const dayGenderCode = Number.parseInt(fiscalCode.substring(9, 11));
-  const municipalCode = fiscalCode.substring(11, 15);
+  // Revert any omocodia substitutions so the numeric components parse back.
+  const normalized = normalizeOmocodia(fiscalCode.toUpperCase().trim());
+
+  const yearCode = normalized.substring(6, 8);
+  const monthCode = normalized.substring(8, 9);
+  const dayGenderCode = Number.parseInt(normalized.substring(9, 11), 10);
+  const municipalCode = normalized.substring(11, 15);
 
   // Extract birth date components
   const year = decodeYear(yearCode);

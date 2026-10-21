@@ -46,7 +46,7 @@ async function fetchMunicipalities(): Promise<ApiMunicipality[]> {
       );
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as { resultset?: ApiMunicipality[] };
 
     if (!data.resultset || !Array.isArray(data.resultset)) {
       throw new Error('Invalid API response format');
@@ -71,7 +71,7 @@ async function fetchNewMunicipalities(): Promise<NewApiMunicipality[]> {
       );
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as NewApiMunicipality[];
     console.log(`Fetched ${data.length} municipalities from GitHub`);
     return data;
   } catch (error) {
@@ -134,7 +134,7 @@ function getCurrentMunicipalities(): string[] {
 
     // Extract the array entries using regex
     const arrayMatch = content.match(/\[\n([\s\S]+)\n\]/);
-    if (!arrayMatch || !arrayMatch[1]) {
+    if (!arrayMatch?.[1]) {
       throw new Error('Failed to parse municipalities file');
     }
 
