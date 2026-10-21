@@ -12,7 +12,8 @@ Check out the [live demo](https://cf.bitrey.it) to see codice-fiscale-ts in acti
 
 This library was created to address several limitations in existing Italian Fiscal Code libraries:
 
-- 🆕 **Automatically Updated Municipalities**: Other libraries like codice-fiscale-js aren't automatically updated when changes are made to the list of municipal cadastral codes. This library uses the [comuni-json](https://github.com/matteocontrini/comuni-json) repository and the [ISTAT API](https://situas-servizi.istat.it/publish/reportspooljson?pfun=61&pdata=01/01/1948) to stay up-to-date.
+- 🆕 **Automatically Updated Municipalities**: Other libraries like codice-fiscale-js aren't automatically updated when changes are made to the list of municipal cadastral codes. This library checks the [ISTAT API](https://situas-servizi.istat.it/publish/reportspooljson?pfun=61&pdata=01/01/2026) every week and releases a new version when municipalities change.
+- 🏛️ **Suppressed Municipalities**: People born in a municipality that no longer exists (e.g. Porretta Terme, merged in 2016) still carry its code. Historical names come from the [ANPR archive](https://www.anagrafenazionale.interno.it/wp-content/uploads/ANPR_archivio_comuni.csv), so these codes can be both calculated and decoded.
 - 🔒 **Modern TypeScript Support**: Full TypeScript support with proper type definitions, distinguishing between people born in Italy (`ItalianPerson`) and abroad (`ForeignPerson`).
 - ⚡ **Tree Shaking Support**: Built with modern ES modules to support tree shaking. For validating a fiscal code (`isValidFiscalCode`), the entire library is under 10kB (~5kB with tree shaking enabled)!
 - 🌐 **Standardized Country Codes**: Uses ISO 3166-1 alpha-2 country codes instead of Italian country names when handling people born abroad.
@@ -42,13 +43,24 @@ import { calculateFiscalCode, type Person } from "codice-fiscale-ts";
 const person: Person = {
   firstName: "Mario",
   lastName: "Rossi",
-  birthDate: new Date("1990-01-01"),
+  birthDate: "1990-01-01", // or a Date, e.g. new Date(1990, 0, 1)
   gender: "M",
   birthPlace: "Roma"
 };
 
 const fiscalCode = await calculateFiscalCode(person);
-console.log(fiscalCode); // RSSMRA90A01H501W (example)
+console.log(fiscalCode); // RSSMRA90A01H501W
+```
+
+> **Dates and time zones:** prefer a `"YYYY-MM-DD"` string for `birthDate`. A
+> `Date` is read in local time, and `new Date("1990-01-01")` is midnight UTC,
+> which is still December 31st in time zones west of UTC.
+
+Suppressed municipalities and former names work too:
+
+```typescript
+await calculateFiscalCode({ ...person, birthDate: "1950-03-10", birthPlace: "Porretta Terme" });
+// RSSMRA50C10A558L
 ```
 
 ### Validating a Fiscal Code
@@ -69,8 +81,10 @@ const decodedData = await decodeFiscalCode("RSSMRA90A01H501W");
 console.log(decodedData);
 /*
 {
-  birthDate: new Date('1990-01-01'),
+  birthDate: new Date(1990, 0, 1), // local midnight
+  birthDateISO: '1990-01-01',
   gender: 'M',
+  cadastralCode: 'H501',
   birthPlace: 'Roma',
   birthProvince: 'RM'
 }
@@ -100,8 +114,9 @@ console.log(decodedData);
 - `validatePerson(person: Person): void` - Validate that a person object has all required fields
 - `isItalianPerson(person: Person): boolean` - Check if a person was born in Italy
 - `isForeignPerson(person: Person): boolean` - Check if a person was born abroad
-- `getMunicipalityByCode(code: string): Promise<Municipality>` - Get municipality by cadastral code
-- `getMunicipalCodeFromPlace(place: string): Promise<string>` - Get cadastral code from place name
+- `getMunicipalityByCode(code: string): Promise<Municipality>` - Get municipality by cadastral code (suppressed ones included)
+- `normalizeOmocodia(fiscalCode: string): string` - Revert omocodia substitutions back to digits
+- `getMunicipalCodeFromPlace(place: string, province?: string): Promise<string>` - Get cadastral code from place name (current or historical)
 - `getMunicipalities(): Promise<Municipality[]>` - Get all Italian municipalities
 - `getForeignCountries(): Promise<Country[]>` - Get all supported foreign countries
 - `getCountryCode(countryCode: string): Promise<string>` - Get country code from ISO Alpha2 country code

@@ -26,6 +26,7 @@ export type {
   Country,
   FiscalCodeData,
   ForeignPerson,
+  HistoricalMunicipality,
   ItalianMunicipality,
   ItalianPerson,
   Municipality,
