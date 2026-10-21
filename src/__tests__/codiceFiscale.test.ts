@@ -1,4 +1,4 @@
-import { equal } from 'node:assert/strict';
+import { deepEqual, equal, throws } from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
@@ -12,6 +12,8 @@ import {
   decodeFiscalCode,
   extractConsonants,
   extractVowels,
+  getMunicipalCodeFromPlace,
+  getMunicipalityByCode,
   isForeignPerson,
   isItalianPerson,
   isValidFiscalCode,
@@ -306,7 +308,10 @@ await describe('Codice Fiscale Functions', async () => {
           });
           equal(true, false, 'Expected to throw error');
         } catch (error) {
-          equal((error as Error).message, 'Valid birth date is required');
+          equal(
+            (error as Error).message,
+            'Valid birth date is required (a Date or a "YYYY-MM-DD" string)'
+          );
         }
       });
 
@@ -391,6 +396,114 @@ await describe('Codice Fiscale Functions', async () => {
     await it('calculates fiscal code for valid Foreign person', async () => {
       const fiscalCode = await calculateFiscalCode(testForeignPerson);
       equal(fiscalCode.length, 16);
+    });
+  });
+
+  await describe('birth date and time zones', async () => {
+    await it('accepts a YYYY-MM-DD string', async () => {
+      equal(
+        await calculateFiscalCode({ ...testPerson, birthDate: '1980-01-01' }),
+        await calculateFiscalCode(testPerson)
+      );
+    });
+
+    await it('is not shifted by time zones west of UTC', async () => {
+      const originalTz = process.env['TZ'];
+      process.env['TZ'] = 'America/New_York';
+      try {
+        // Precondition: a parsed ISO date is the previous day here
+        equal(new Date('1980-01-01').getDate(), 31);
+
+        const fiscalCode = await calculateFiscalCode({
+          ...testPerson,
+          birthDate: '1980-01-01'
+        });
+        equal(fiscalCode, 'RSSMRA80A01H501U');
+
+        const decoded = await decodeFiscalCode(fiscalCode);
+        equal(decoded.birthDateISO, '1980-01-01');
+        equal(decoded.birthDate!.getDate(), 1);
+      } finally {
+        process.env['TZ'] = originalTz;
+      }
+    });
+
+    await it('rejects malformed or impossible date strings', async () => {
+      for (const birthDate of ['1980-1-1', '2023-02-30', 'not a date']) {
+        throws(() => validatePerson({ ...testPerson, birthDate }), {
+          message:
+            'Valid birth date is required (a Date or a "YYYY-MM-DD" string)'
+        });
+      }
+    });
+
+    await it('decodes the birth date as an ISO string', async () => {
+      const decoded = await decodeFiscalCode('RSSMRA80A41H501Y');
+      equal(decoded.birthDateISO, '1980-01-01');
+      equal(decoded.gender, 'F');
+    });
+  });
+
+  await describe('historical municipalities', async () => {
+    await it('calculates the code for a suppressed municipality', async () => {
+      // Porretta Terme was merged into Alto Reno Terme in 2016
+      const fiscalCode = await calculateFiscalCode({
+        ...testPerson,
+        birthPlace: 'Porretta Terme',
+        birthProvince: undefined
+      });
+      equal(fiscalCode.substring(11, 15), 'A558');
+    });
+
+    await it('decodes a suppressed municipality to its last name', async () => {
+      const base = 'RSSMRA80A01A558';
+      const decoded = await decodeFiscalCode(
+        base + calculateCheckCharacter(base)
+      );
+      equal(decoded.cadastralCode, 'A558');
+      equal(decoded.birthPlace, 'PORRETTA TERME');
+      equal(decoded.birthProvince, 'BO');
+    });
+
+    await it('resolves former names and historical codes', async () => {
+      equal(await getMunicipalCodeFromPlace('Bagni della Porretta'), 'A558');
+      equal(await getMunicipalCodeFromPlace('A558'), 'A558');
+      deepEqual(await getMunicipalityByCode('A558'), [
+        'A558',
+        'PORRETTA TERME',
+        'BO'
+      ]);
+    });
+
+    await it('prefers current municipalities over historical names', async () => {
+      deepEqual(await getMunicipalityByCode('H501'), ['H501', 'Roma', 'RM']);
+    });
+
+    await it('knows recently established municipalities', async () => {
+      // Established in 2026 from the merger of Castegnero and Nanto
+      equal(await getMunicipalCodeFromPlace('Castegnero Nanto'), 'M439');
+    });
+  });
+
+  await describe('foreign birth places', async () => {
+    await it('leaves foreignCountry out for unmapped country codes', async () => {
+      const base = 'RSSMRA80A01Z999';
+      const decoded = await decodeFiscalCode(
+        base + calculateCheckCharacter(base)
+      );
+      equal(decoded.cadastralCode, 'Z999');
+      equal(decoded.foreignCountry, undefined);
+    });
+
+    await it('accepts explicitly undefined optional fields', async () => {
+      equal(
+        isForeignPerson({ ...testForeignPerson, birthPlace: undefined }),
+        true
+      );
+      equal(
+        isItalianPerson({ ...testPerson, foreignCountry: undefined }),
+        true
+      );
     });
   });
 });

@@ -34,7 +34,7 @@ async function runCommand(
  */
 async function hasChanges(): Promise<boolean> {
   const { stdout } = await execPromise(
-    'git status --porcelain src/data/municipalities.ts'
+    'git status --porcelain src/data/municipalities.ts src/data/historicalMunicipalities.ts'
   );
   return stdout.trim().length > 0;
 }
@@ -45,10 +45,11 @@ async function hasChanges(): Promise<boolean> {
 async function commitChanges(): Promise<void> {
   console.log('Committing changes to municipalities data...');
 
-  // Stage the municipalities file
+  // Stage the municipalities data files
   const stageResult = await runCommand('git', [
     'add',
-    'src/data/municipalities.ts'
+    'src/data/municipalities.ts',
+    'src/data/historicalMunicipalities.ts'
   ]);
   if (stageResult.code !== 0) {
     console.error('Failed to stage changes:', stageResult.stderr);

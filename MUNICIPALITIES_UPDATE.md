@@ -10,12 +10,12 @@ Italian municipalities data is periodically fetched from an official source to e
 
 1. A scheduled GitHub Actions workflow runs every Monday at 3 AM UTC
 2. The workflow executes the `update-municipalities.ts` script which:
-   - Fetches municipalities data from the [comuni-json](https://github.com/matteocontrini/comuni-json) repository and the ISTAT API (`https://situas-servizi.istat.it/publish/reportspooljson?pfun=61&pdata=01/01/1948`)
-   - Compares it with the current data in `src/data/municipalities.ts`
-   - Updates the file if changes are detected
-3. If changes are found, a commit is created with a semantic-release compatible message (`feat: update municipalities data`)
+   - Fetches the current municipalities from the ISTAT API (`https://situas-servizi.istat.it/publish/reportspooljson?pfun=61&pdata=<today>`), including bilingual names
+   - Fetches the [ANPR archive](https://www.anagrafenazionale.interno.it/wp-content/uploads/ANPR_archivio_comuni.csv) of every municipality that ever existed (with the [GitHub copy](https://github.com/italia/anpr/blob/master/src/archivi/ANPR_archivio_comuni.csv) as a fallback), and keeps the names no longer in use: suppressed municipalities and former names of current ones
+   - Regenerates `src/data/municipalities.ts` and `src/data/historicalMunicipalities.ts`, and exits with code 1 if either changed
+3. If changes are found, the tests run and a commit is created with a semantic-release compatible message (`feat: update municipalities data`)
 4. The changes are pushed to the repository
-5. A new release is automatically created and published according to semantic versioning
+5. The workflow dispatches the main `codice-fiscale-ts.yml` workflow, which checks, builds and releases the new version
 
 ## Manual Trigger
 

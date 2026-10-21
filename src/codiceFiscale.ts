@@ -2,11 +2,14 @@ import type { FiscalCodeData, Municipality, Person } from './types.ts';
 import { isForeignPerson, isItalianPerson, validatePerson } from './types.ts';
 
 /**
- * Gets municipality information by code
+ * Gets municipality information by code. Codes of suppressed municipalities
+ * are resolved too, to the last name they had (uppercase, as published by
+ * ANPR), since people born there still carry them in their fiscal code.
  * @param code - The cadastral code to lookup
  * @returns Municipality data
  * @example
- * await getMunicipalityByCode("H501"); // Returns ["H501", "ROMA", "RM"]
+ * await getMunicipalityByCode("H501"); // Returns ["H501", "Roma", "RM"]
+ * await getMunicipalityByCode("A558"); // Returns ["A558", "PORRETTA TERME", "BO"]
  * @throws If the municipality code is invalid
  */
 export async function getMunicipalityByCode(
@@ -20,11 +23,24 @@ export async function getMunicipalityByCode(
     ([cadastralCode]) => cadastralCode === code
   );
 
-  if (!municipality) {
+  if (municipality) {
+    return municipality;
+  }
+
+  // Fall back to suppressed municipalities (sorted most recent name first)
+  const { historicalMunicipalities } = await import(
+    './data/historicalMunicipalities.ts'
+  );
+  const historical = historicalMunicipalities.find(
+    ([cadastralCode]) => cadastralCode === code
+  );
+
+  if (!historical) {
     throw new Error(`Invalid municipality code: ${code}`);
   }
 
-  return municipality;
+  const [cadastralCode, name, province] = historical;
+  return [cadastralCode, name, province];
 }
 
 /**
@@ -273,7 +289,9 @@ export function calculateDayGenderCode(date: Date, gender: 'M' | 'F'): string {
 /**
  * Get cadastral code from place name or cadastral code
  * @param place - The name of the municipality or its cadastral code. For
- * bilingual municipalities either language variant is accepted.
+ * bilingual municipalities either language variant is accepted. Suppressed
+ * municipalities and former names are accepted too, when no current
+ * municipality matches.
  * @param province - Optional province (e.g. "BZ") used to disambiguate when
  * several municipalities share the same name
  * @returns The cadastral code for the municipality
@@ -281,6 +299,7 @@ export function calculateDayGenderCode(date: Date, gender: 'M' | 'F'): string {
  * await getMunicipalCodeFromPlace("ROMA"); // Returns "H501"
  * await getMunicipalCodeFromPlace("H501"); // Returns "H501"
  * await getMunicipalCodeFromPlace("Peglio", "PU"); // Disambiguates by province
+ * await getMunicipalCodeFromPlace("Porretta Terme"); // Returns "A558" (suppressed in 2016)
  * @throws If the place is not found
  */
 export async function getMunicipalCodeFromPlace(
@@ -290,16 +309,12 @@ export async function getMunicipalCodeFromPlace(
   // Dynamically import municipalities data
   const { municipalities } = await import('./data/municipalities.ts');
   const normalizedPlace = normalizeString(place);
+  const code = place.trim().toUpperCase();
 
   // If the place is exactly 4 characters, it might be a cadastral code itself
-  if (place.trim().length === 4) {
-    // Check if it exists as a cadastral code directly
-    const municipalityByCode = municipalities.find(
-      ([cadastralCode]) => cadastralCode === place.trim().toUpperCase()
-    );
-    if (municipalityByCode) {
-      return municipalityByCode[0];
-    }
+  const isCode = (cadastralCode: string) => cadastralCode === code;
+  if (code.length === 4 && municipalities.some(([c]) => isCode(c))) {
+    return code;
   }
 
   // Match by any name variant (Italian name, plus both names if bilingual).
@@ -310,21 +325,42 @@ export async function getMunicipalCodeFromPlace(
       .some((name) => normalizeString(name) === normalizedPlace)
   );
 
-  if (matches.length === 0) {
-    throw new Error(`Invalid birth place: ${place}`);
+  if (matches.length > 0) {
+    return pickByProvince(matches, province)[0];
   }
 
-  // When the name is ambiguous, prefer the requested province if provided.
-  if (province) {
-    const byProvince = matches.find(
-      ([, , prov]) => prov.toUpperCase() === province.toUpperCase()
-    );
-    if (byProvince) {
-      return byProvince[0];
-    }
+  // No current municipality matches: try suppressed ones and former names
+  const { historicalMunicipalities } = await import(
+    './data/historicalMunicipalities.ts'
+  );
+
+  if (code.length === 4 && historicalMunicipalities.some(([c]) => isCode(c))) {
+    return code;
   }
 
-  return matches[0]![0];
+  const historicalMatches = historicalMunicipalities.filter(
+    ([, name]) => normalizeString(name) === normalizedPlace
+  );
+
+  if (historicalMatches.length > 0) {
+    return pickByProvince(historicalMatches, province)[0];
+  }
+
+  throw new Error(`Invalid birth place: ${place}`);
+}
+
+/**
+ * When a name is ambiguous, prefer the match in the requested province
+ * (if any), otherwise the first match.
+ */
+function pickByProvince<T extends [string, string, string, ...string[]]>(
+  matches: T[],
+  province: string | undefined
+): T {
+  const byProvince =
+    province &&
+    matches.find(([, , prov]) => prov.toUpperCase() === province.toUpperCase());
+  return byProvince || matches[0]!;
 }
 
 /**
@@ -510,27 +546,30 @@ export function decodeDay(dayCode: number): number {
 
 /**
  * Calculate the complete fiscal code for a person
- * @param person - Object containing person's data
+ * @param person - Object containing person's data. `birthDate` can be a
+ * `"YYYY-MM-DD"` string (recommended: it is not affected by time zones) or a
+ * `Date`, whose local date is used.
  * @returns The complete 16-character fiscal code
  * @example
  * await calculateFiscalCode(\{
  *   firstName: "Mario",
  *   lastName: "Rossi",
  *   gender: "M",
- *   birthDate: new Date(1990, 0, 15),
+ *   birthDate: "1990-01-15",
  *   birthPlace: "ROMA"
- * \}); // Returns something like "RSSMRA90A15H501X"
+ * \}); // Returns "RSSMRA90A15H501K"
  * @throws If the person data is invalid
  */
 export async function calculateFiscalCode(person: Person): Promise<string> {
   // Validate person object
   validatePerson(person);
 
+  const birthDate = toLocalDate(person.birthDate);
   const lastName = calculateLastNameCode(person.lastName);
   const firstName = calculateFirstNameCode(person.firstName);
-  const yearCode = calculateYearCode(person.birthDate);
-  const monthCode = calculateMonthCode(person.birthDate);
-  const dayGenderCode = calculateDayGenderCode(person.birthDate, person.gender);
+  const yearCode = calculateYearCode(birthDate);
+  const monthCode = calculateMonthCode(birthDate);
+  const dayGenderCode = calculateDayGenderCode(birthDate, person.gender);
 
   let placeCode: string;
 
@@ -553,6 +592,22 @@ export async function calculateFiscalCode(person: Person): Promise<string> {
   const checkChar = calculateCheckCharacter(partialCode);
 
   return partialCode + checkChar;
+}
+
+/**
+ * A `"YYYY-MM-DD"` string is a calendar date: turn it into local midnight, so
+ * that the local getters used by the code calculators read it back unchanged.
+ * Parsing it with `new Date()` would yield UTC midnight instead, which is the
+ * previous day in time zones west of UTC.
+ */
+function toLocalDate(birthDate: Date | string): Date {
+  if (birthDate instanceof Date) {
+    return birthDate;
+  }
+  const [year, month, day] = birthDate.split('-').map(Number);
+  const date = new Date(2000, month! - 1, day!);
+  date.setFullYear(year!);
+  return date;
 }
 
 /**
@@ -612,16 +667,23 @@ export function isValidFiscalCode(fiscalCode: string): boolean {
 /**
  * Decode a fiscal code to extract available information
  * @param fiscalCode - The fiscal code to decode
- * @returns Object containing decoded information (birth date, gender, place)
+ * @returns Object containing decoded information (birth date, gender, place).
+ * `birthDate` is local midnight of the birth day; prefer `birthDateISO`
+ * (`"YYYY-MM-DD"`), which does not depend on the time zone. For people born
+ * abroad, `foreignCountry` is left out when the country code is not mapped to
+ * an ISO code (e.g. former states); `cadastralCode` is always set.
  * @example
- * await decodeFiscalCode("RSSMRA90A15H501X");
+ * await decodeFiscalCode("RSSMRA90A15H501K");
  * // Returns \{
  * //   birthDate: new Date(1990, 0, 15),
+ * //   birthDateISO: "1990-01-15",
  * //   gender: "M",
- * //   birthPlace: "ROMA",
+ * //   cadastralCode: "H501",
+ * //   birthPlace: "Roma",
  * //   birthProvince: "RM"
  * // \}
- * @throws If the fiscal code is invalid
+ * @throws If the fiscal code is invalid, or its Italian municipality code
+ * is unknown
  */
 export async function decodeFiscalCode(
   fiscalCode: string
@@ -647,9 +709,12 @@ export async function decodeFiscalCode(
   const gender: 'M' | 'F' = dayGenderCode > 40 ? 'F' : 'M';
 
   // Create common person data
+  const pad = (n: number) => n.toString().padStart(2, '0');
   const personData: FiscalCodeData = {
-    birthDate: new Date(year, month - 1, day),
-    gender
+    birthDate: toLocalDate(`${year}-${pad(month)}-${pad(day)}`),
+    birthDateISO: `${year}-${pad(month)}-${pad(day)}`,
+    gender,
+    cadastralCode: municipalCode
   };
 
   // Check if born outside Italy (Z code)
@@ -657,14 +722,10 @@ export async function decodeFiscalCode(
     // Need to look up the ISO country code from the cadastral code
     const { countries } = await import('./data/countries.ts');
     const countryEntry = countries.find((c) => c[0] === municipalCode);
-    const foreignCountry = countryEntry
-      ? countryEntry[1]
-      : municipalCode.substring(1);
 
-    return {
-      ...personData,
-      foreignCountry
-    };
+    return countryEntry
+      ? { ...personData, foreignCountry: countryEntry[1] }
+      : personData;
   }
   // Find birth place by cadastral code (reverse lookup)
   const birthPlaceInfo = await getMunicipalityByCode(municipalCode);

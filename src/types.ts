@@ -1,7 +1,11 @@
 export interface BasePerson {
   firstName: string;
   lastName: string;
-  birthDate: Date;
+  /**
+   * Birth date: a `"YYYY-MM-DD"` string (recommended, as it is not affected
+   * by time zones) or a `Date`, whose local date is used.
+   */
+  birthDate: Date | string;
   gender: 'M' | 'F';
 }
 
@@ -27,7 +31,7 @@ export function isItalianPerson(person: Person): person is ItalianPerson {
     'birthPlace' in person &&
     typeof person.birthPlace === 'string' &&
     person.birthPlace.trim() !== '' &&
-    (!('foreignCountry' in person) || person.foreignCountry === 'IT')
+    (person.foreignCountry === undefined || person.foreignCountry === 'IT')
   );
 }
 
@@ -40,7 +44,7 @@ export function isForeignPerson(person: Person): person is ForeignPerson {
     typeof person.foreignCountry === 'string' &&
     person.foreignCountry.length === 2 && // alpha2 country code
     person.foreignCountry !== 'IT' &&
-    !('birthPlace' in person)
+    person.birthPlace === undefined
   );
 }
 
@@ -58,12 +62,10 @@ export function validatePerson(person: Person): void {
   if (!person.lastName || person.lastName.trim() === '')
     throw new Error('Last name is required');
 
-  if (
-    !person.birthDate ||
-    !(person.birthDate instanceof Date) ||
-    Number.isNaN(person.birthDate.getTime())
-  )
-    throw new Error('Valid birth date is required');
+  if (!isValidBirthDate(person.birthDate))
+    throw new Error(
+      'Valid birth date is required (a Date or a "YYYY-MM-DD" string)'
+    );
 
   if (!person.gender || !['M', 'F'].includes(person.gender))
     throw new Error('Gender must be either "M" or "F"');
@@ -81,14 +83,35 @@ export function validatePerson(person: Person): void {
   }
 }
 
+/** A valid `Date`, or a `"YYYY-MM-DD"` string naming a real calendar day. */
+function isValidBirthDate(birthDate: unknown): boolean {
+  if (birthDate instanceof Date) {
+    return !Number.isNaN(birthDate.getTime());
+  }
+  if (typeof birthDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+    return false;
+  }
+  // Reject days that don't exist, e.g. "2023-02-30"
+  const date = new Date(`${birthDate}T00:00:00Z`);
+  return (
+    !Number.isNaN(date.getTime()) &&
+    date.toISOString().slice(0, 10) === birthDate
+  );
+}
+
 export type FiscalCodeData = {
+  /** Local midnight of the birth day; see `birthDateISO` */
   birthDate?: Date;
+  /** Birth date as `"YYYY-MM-DD"`, independent of the time zone */
+  birthDateISO?: string;
   gender?: 'M' | 'F';
   firstName?: string;
   lastName?: string;
   birthPlace?: string;
   birthProvince?: string;
   foreignCountry?: string;
+  /** Cadastral code of the birth place (municipality, or `Z###` country) */
+  cadastralCode?: string;
 };
 
 export type ItalianMunicipality = [
@@ -104,5 +127,17 @@ export type BilingualMunicipality = [
 ];
 
 export type Municipality = ItalianMunicipality | BilingualMunicipality;
+
+/**
+ * A name no longer in use: a suppressed municipality, or a former name of a
+ * current one. Names are uppercase, as published by ANPR.
+ */
+export type HistoricalMunicipality = [
+  cadastralCode: string,
+  name: string,
+  province: string,
+  /** Last day the name was in use (YYYY-MM-DD) */
+  ceasedOn: string
+];
 
 export type Country = [cadastralCode: string, alpha2: string];
