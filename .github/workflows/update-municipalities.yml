@@ -14,11 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
       pull-requests: write
+      id-token: write # npm trusted publishing (OIDC) + provenance
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -28,25 +30,29 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version-file: package.json
 
       - name: Setup PNPM
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
-          version: latest
           run_install: true
 
       - name: Run update script
         id: update
+        # The script exits 1 when the data changed: don't let `bash -e` abort
+        # the step before the exit code is recorded
         run: |
-          node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/update-municipalities.ts
-          echo "update_exit_code=$?" >> $GITHUB_OUTPUT
+          set +e
+          pnpm run update-municipalities
+          code=$?
+          echo "update_exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -ne 0 ] && [ "$code" -ne 1 ]; then exit "$code"; fi
 
       - name: Commit changes if municipalities were updated
         if: steps.update.outputs.update_exit_code == '1'
-        run: node --disable-warning=ExperimentalWarning --experimental-strip-types ./scripts/commit-municipalities-update.ts
+        run: pnpm run commit-municipalities-update
 
       - name: Push changes
         if: steps.update.outputs.update_exit_code == '1'
@@ -54,7 +60,8 @@ jobs:
 
       - name: Release
         if: steps.update.outputs.update_exit_code == '1'
+        run: |
+          pnpm run build
+          pnpm run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: pnpm run semantic-release

@@ -134,7 +134,7 @@ function getCurrentMunicipalities(): string[] {
 
     // Extract the array entries using regex
     const arrayMatch = content.match(/\[\n([\s\S]+)\n\]/);
-    if (!arrayMatch || !arrayMatch[1]) {
+    if (!arrayMatch?.[1]) {
       throw new Error('Failed to parse municipalities file');
     }
 

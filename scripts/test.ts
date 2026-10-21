@@ -1,4 +1,3 @@
-import isMain from 'is-main';
 import { spawn } from 'node:child_process';
 
 async function runTests({
@@ -40,6 +39,7 @@ async function runTests({
         console.log(`🚀 ran tests in ${Date.now() - time}ms`);
 
         resolve();
+        return;
       }
 
       reject(`🚨 tests failed with code ${code} in ${Date.now() - time}ms`);
@@ -47,7 +47,7 @@ async function runTests({
   });
 }
 
-if (isMain(import.meta)) {
+if (import.meta.main) {
   const filesFilter = process.argv.slice(3).join(' ').trim();
 
   if (process.argv[2] === 'test') {

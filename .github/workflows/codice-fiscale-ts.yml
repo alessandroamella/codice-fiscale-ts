@@ -17,22 +17,19 @@ permissions:
   contents: write
   issues: write
   pull-requests: write
-
-env:
-  NODE_AUTH_TOKEN:
+  id-token: write # npm trusted publishing (OIDC) + provenance
 
 jobs:
   lint:
     name: 🔬 Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version-file: package.json
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         with:
-          version: latest
           run_install: true
       - name: 🔬 Lint
         run: pnpm run lint
@@ -41,13 +38,12 @@ jobs:
     name: ʦ Typecheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version-file: package.json
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         with:
-          version: latest
           run_install: true
       - name: ʦ Typecheck
         run: pnpm run type:check
@@ -56,13 +52,12 @@ jobs:
     name: ⚡ Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version-file: package.json
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         with:
-          version: latest
           run_install: true
       - name: ⚡ Tests
         run: pnpm run test:coverage
@@ -73,20 +68,18 @@ jobs:
     needs: [lint, type-check, test]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version-file: package.json
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         with:
-          version: latest
           run_install: true
       - name: 🔨 Build
         run: pnpm run build
       - name: 🚀 Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: pnpm run semantic-release
